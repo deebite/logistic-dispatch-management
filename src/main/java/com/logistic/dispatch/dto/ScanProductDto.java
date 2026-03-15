@@ -7,7 +7,6 @@ import lombok.Data;
 @Data
 public class ScanProductDto {
     @NotBlank(message = "Product code is required")
-    @Size(min = 26, max = 26, message = "Product code should be 26 characters long")
     private String productCode;
 
     @NotBlank(message = "Product serial number is required")

@@ -14,5 +14,6 @@ public class BulkScanResponseDto {
     private List<SerialProcessResult> results;
     private String batchStatus;
     private int remainingUnits;
+    private String qrImage;
 }
 

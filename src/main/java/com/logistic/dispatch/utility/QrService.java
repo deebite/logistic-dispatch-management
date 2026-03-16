@@ -11,6 +11,7 @@ import com.logistic.dispatch.entitiy.Pallet;
 import com.logistic.dispatch.exception.QrGenerationException;
 import com.logistic.dispatch.repository.BatchRepository;
 import org.hibernate.annotations.CurrentTimestamp;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.imageio.ImageIO;
@@ -28,12 +29,25 @@ import java.util.Map;
 @Component
 public class QrService {
 
+    @Value("${qr-images.store.path}")
+    private String qrCodePath;
+
     private final ObjectMapper objectMapper;
     private final BatchRepository batchRepository;
 
     public QrService(ObjectMapper objectMapper, BatchRepository batchRepository) {
         this.objectMapper = objectMapper;
         this.batchRepository = batchRepository;
+    }
+
+    public String getQrImageBase64(String qrPath) {
+        try {
+            Path path = Path.of(qrPath);
+            byte[] imageBytes = Files.readAllBytes(path);
+            return java.util.Base64.getEncoder().encodeToString(imageBytes);
+        } catch (Exception e) {
+            throw new QrGenerationException("Failed to read QR image", e);
+        }
     }
 
     public void generateQrForBatch(Batch batch, List<String> serialList) {
@@ -58,8 +72,8 @@ public class QrService {
 
             BufferedImage finalImage = addLabelToQr(bitMatrix, "Batch: " + batch.getBatchSerialNumber());
 
-            String fileName = "batch_" + batch.getBatchId() + ".png";
-            String folderPath = "qr-images/";
+            String fileName = "batch_" + batch.getBatchSerialNumber() + ".png";
+            String folderPath = qrCodePath;
 
 //            Path path = FileSystems.getDefault().getPath(folderPath + fileName);
             Path path = Path.of(folderPath + fileName);
@@ -116,8 +130,8 @@ public class QrService {
 
             BufferedImage finalImage = addLabelToQr(bitMatrix, "Pallet: " + pallet.getPalletSerialNumber());
 
-            String fileName = "pallet_" + pallet.getPalletId() + ".png";
-            String folderPath = "qr-images/";
+            String fileName = "pallet_" + pallet.getPalletSerialNumber() + ".png";
+            String folderPath = qrCodePath;
 
             Path path = FileSystems.getDefault().getPath(folderPath + fileName);
             Files.createDirectories(path.getParent());

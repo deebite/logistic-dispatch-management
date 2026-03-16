@@ -65,6 +65,12 @@ public class BatchServiceImpl implements BatchService {
         }
 
         finalizeBatchAfterProcessing(batch, serialList);
+        int remaining = batch.getMaxUnits() - batch.getCurrentUnits();
+        String qrImage = null;
+
+        if (batch.getStatus() == LifeCycleStatus.CLOSED) {
+            qrImage = qrService.getQrImageBase64(batch.getQrCodePath());
+        }
 
         return new ScanResponseDto(
                 batch.getStatus() == LifeCycleStatus.CLOSED ? "Product scanned successfully. Batch closed."
@@ -74,7 +80,9 @@ public class BatchServiceImpl implements BatchService {
                 batch.getBatchSerialNumber(),
                 batch.getCurrentUnits(),
                 batch.getMaxUnits(),
-                batch.getStatus().name());
+                batch.getStatus().name(),
+                remaining,
+                qrImage);
     }
 
     @Override
@@ -110,7 +118,14 @@ public class BatchServiceImpl implements BatchService {
         finalizeBatchAfterProcessing(batch, serialList);
         int remaining = batch.getMaxUnits() - batch.getCurrentUnits();
 
-        return new BulkScanResponseDto(batch.getBatchSerialNumber(), processedCount, results, batch.getStatus().name(), remaining);
+        // ADD THIS BLOCK HERE
+        String qrImage = null;
+
+        if (batch.getStatus() == LifeCycleStatus.CLOSED) {
+            qrImage =  qrService.getQrImageBase64(batch.getQrCodePath());
+        }
+
+        return new BulkScanResponseDto(batch.getBatchSerialNumber(), processedCount, results, batch.getStatus().name(), remaining, qrImage);
     }
 
     private SerialProcessResult processSingleSerial(Batch batch, String rawSerial, List<String> serialList, Set<String> existingSet) {

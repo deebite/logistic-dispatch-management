@@ -22,4 +22,8 @@ public class ScanResponseDto {
     private Integer maxUnits;
 
     private String status;
+
+    private int remainingUnits;
+
+    private String qrImage;
 }

@@ -128,4 +128,10 @@ public class UserServiceImpl implements UserService {
         UserInfo user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User not found"));
         userRepository.delete(user);
     }
+
+    @Override
+    public UserResponseDto getUserByUsername(String username) {
+        UserInfo user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException("User not found"));
+        return UserMapper.toResponse(user);
+    }
 }

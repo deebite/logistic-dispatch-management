@@ -9,12 +9,16 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "pallet")
 @Data
 @NoArgsConstructor
@@ -51,6 +55,14 @@ public class Pallet extends BaseEntity {
     private LocalDateTime qrGeneratedAt;
 
     private LocalDateTime closedAt;
+
+    @CreatedBy
+    @Column(name = "created_by", updatable = false)
+    private String createdBy;
+
+    @LastModifiedBy
+    @Column(name = "updated_by")
+    private String updatedBy;
 
     @Version
     private Long version = 0L;

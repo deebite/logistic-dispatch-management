@@ -15,8 +15,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/admin/products")
-@PreAuthorize("hasRole('ADMIN')")
+@RequestMapping("/api/products")
 public class ProductController {
 
     private final ProductService productService;
@@ -31,33 +30,39 @@ public class ProductController {
     }
 
     @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ADMIN','OPERATOR')")
     public ResponseEntity<List<ProductResponseDto>> getAllProducts() {
         return ResponseEntity.ok(productService.getAllProducts());
     }
 
     @GetMapping("/id/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','OPERATOR')")
     public ResponseEntity<ProductResponseDto> getProductById(@PathVariable UUID id) {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
     @GetMapping("/code/{productCode}")
+    @PreAuthorize("hasAnyRole('ADMIN','OPERATOR')")
     public ResponseEntity<ProductResponseDto> getProductByCode(@PathVariable String productCode) {
         ProductResponseDto response = productService.getProductByCode(productCode);
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/update/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProductResponseDto> updateProduct(@PathVariable UUID id, @Validated(OnUpdate.class) @RequestBody ProductRequestDto dto) {
         return ResponseEntity.ok(productService.updateProduct(id, dto));
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProductResponseDto> changeStatus(@PathVariable UUID id, @RequestParam String status) {
         ProductStatus productStatus = ProductStatus.valueOf(status.toUpperCase());
         return ResponseEntity.ok(productService.changeProductStatus(id, productStatus));
     }
 
     @DeleteMapping("/delete/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteProduct(@PathVariable UUID id) {
         productService.deleteProduct(id);
         return ResponseEntity.ok("Product deleted successfully");

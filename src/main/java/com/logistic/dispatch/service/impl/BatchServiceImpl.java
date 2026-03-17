@@ -16,8 +16,8 @@ import com.logistic.dispatch.utility.LifeCycleStatus;
 import com.logistic.dispatch.utility.ProductStatus;
 import com.logistic.dispatch.utility.QrService;
 import com.logistic.dispatch.utility.QrStatus;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -122,7 +122,7 @@ public class BatchServiceImpl implements BatchService {
         String qrImage = null;
 
         if (batch.getStatus() == LifeCycleStatus.CLOSED) {
-            qrImage =  qrService.getQrImageBase64(batch.getQrCodePath());
+            qrImage = qrService.getQrImageBase64(batch.getQrCodePath());
         }
 
         return new BulkScanResponseDto(batch.getBatchSerialNumber(), processedCount, results, batch.getStatus().name(), remaining, qrImage);

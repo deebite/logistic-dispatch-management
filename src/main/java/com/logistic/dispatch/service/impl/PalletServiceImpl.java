@@ -48,7 +48,7 @@ public class PalletServiceImpl implements PalletService {
 
         Pallet pallet = getOrCreateOpenPallet(product);
 
-        List<String> batchList = pallet.getBatchSerialList() ;
+        List<String> batchList = pallet.getBatchSerialList();
 
         if (batchList.contains(batch.getBatchSerialNumber())) {
             throw new PalletAssignmentException("Batch already assigned to pallet: " + pallet.getPalletSerialNumber());

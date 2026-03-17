@@ -22,4 +22,6 @@ public interface UserService {
     UserResponseDto changeUserStatus(UUID id, ProfileStatus status);
 
     void deleteUser(UUID id);
+
+    UserResponseDto getUserByUsername(String username);
 }

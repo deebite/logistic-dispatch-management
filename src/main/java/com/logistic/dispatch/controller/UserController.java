@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/admin/users")
+@RequestMapping("/api/employee/users")
 @PreAuthorize("hasRole('ADMIN')")
 public class UserController {
 
@@ -55,6 +55,11 @@ public class UserController {
     public ResponseEntity<UserResponseDto> changeUserStatus(@PathVariable UUID id, @RequestParam String status) {
         ProfileStatus profileStatus = ProfileStatus.valueOf(status.toUpperCase());
         return ResponseEntity.ok(userService.changeUserStatus(id, profileStatus));
+    }
+
+    @GetMapping("/by/{username}")
+    public ResponseEntity<UserResponseDto> getUserByUsername(@PathVariable String username) {
+        return ResponseEntity.ok(userService.getUserByUsername(username));
     }
 
     @DeleteMapping("/delete/{id}")

@@ -5,9 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logistic.dispatch.dto.*;
 import com.logistic.dispatch.entitiy.Batch;
 import com.logistic.dispatch.entitiy.Product;
-import com.logistic.dispatch.exception.DuplicateSerialException;
-import com.logistic.dispatch.exception.ProductInactiveException;
-import com.logistic.dispatch.exception.ProductNotFoundException;
+import com.logistic.dispatch.exception.*;
 import com.logistic.dispatch.repository.BatchRepository;
 import com.logistic.dispatch.repository.ProductRepository;
 import com.logistic.dispatch.service.BatchService;
@@ -23,10 +21,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -128,6 +123,30 @@ public class BatchServiceImpl implements BatchService {
         return new BulkScanResponseDto(batch.getBatchSerialNumber(), processedCount, results, batch.getStatus().name(), remaining, qrImage);
     }
 
+    @Override
+    public ManualBatchCloseResponse closeBatchManually(String batchSerialNumber) {
+
+        Batch batch = batchRepository.findByBatchSerialNumber(batchSerialNumber)
+                .orElseThrow(() -> new UserNotFoundException("Batch not found!"));
+
+        if (batch.getStatus() == LifeCycleStatus.CLOSED) {
+            throw new AlreadyClosed("Batch already closed!");
+        }
+
+        batch.setStatus(LifeCycleStatus.CLOSED);
+        batch.setClosedAt(LocalDateTime.now());
+        batch.setQrStatus(QrStatus.PENDING);
+
+        qrService.generateQrForBatch(batch, batch.getProductSerialList());
+
+        batchRepository.save(batch);
+
+        String qrImage = qrService.getQrImageBase64(batch.getQrCodePath());
+
+        return new ManualBatchCloseResponse("Batch closed successfully",
+                batch.getBatchSerialNumber(), qrImage);
+    }
+
     private SerialProcessResult processSingleSerial(Batch batch, String rawSerial, List<String> serialList, Set<String> existingSet) {
 
         String normalized = rawSerial.trim().toUpperCase();
@@ -195,7 +214,8 @@ public class BatchServiceImpl implements BatchService {
     private List<String> getSerialListFromJson(String json) {
         try {
             if (json != null && !json.isBlank()) {
-                return objectMapper.readValue(json, new TypeReference<List<String>>() {});
+                return objectMapper.readValue(json, new TypeReference<List<String>>() {
+                });
             }
             return new ArrayList<>();
         } catch (Exception e) {
@@ -215,7 +235,7 @@ public class BatchServiceImpl implements BatchService {
 
         String sequence = String.format("%04d", todayCount + 1);
 
-        String batchSerialNumber = "B-" + product.getProductCode() + "-" + formattedDate + "-" + sequence;
+        String batchSerialNumber = "B-" + product.getManufacturerCode() + "-" + product.getProductCode() + "-" + formattedDate + "-" + sequence;
 
         Batch batch = new Batch();
         batch.setBatchSerialNumber(batchSerialNumber);

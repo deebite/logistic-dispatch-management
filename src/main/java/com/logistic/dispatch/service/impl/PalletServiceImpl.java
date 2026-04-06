@@ -2,16 +2,20 @@ package com.logistic.dispatch.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.logistic.dispatch.dto.ManualPalletCloseResponse;
 import com.logistic.dispatch.entitiy.Batch;
 import com.logistic.dispatch.entitiy.Pallet;
 import com.logistic.dispatch.entitiy.Product;
+import com.logistic.dispatch.exception.AlreadyClosed;
 import com.logistic.dispatch.exception.JsonProcessingCustomException;
 import com.logistic.dispatch.exception.PalletAssignmentException;
+import com.logistic.dispatch.exception.UserNotFoundException;
 import com.logistic.dispatch.repository.PalletRepository;
 import com.logistic.dispatch.repository.ProductRepository;
 import com.logistic.dispatch.service.PalletService;
 import com.logistic.dispatch.utility.LifeCycleStatus;
 import com.logistic.dispatch.utility.QrService;
+import com.logistic.dispatch.utility.QrStatus;
 import jakarta.persistence.OptimisticLockException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -108,6 +112,30 @@ public class PalletServiceImpl implements PalletService {
         }
 
         return pallets;
+    }
+
+    @Override
+    public ManualPalletCloseResponse closePalletManually(String palletSerialNumber) {
+
+        Pallet pallet = palletRepository.findByPalletSerialNumber(palletSerialNumber)
+                .orElseThrow(() -> new UserNotFoundException("Pallet not found!"));
+
+        if (pallet.getStatus() == LifeCycleStatus.CLOSED) {
+            throw new AlreadyClosed("Pallet already closed!");
+        }
+
+        pallet.setStatus(LifeCycleStatus.CLOSED);
+        pallet.setClosedAt(LocalDateTime.now());
+        pallet.setQrStatus(QrStatus.PENDING);
+
+        qrService.generatePalletQr(pallet, pallet.getBatchSerialList());
+
+        palletRepository.save(pallet);
+
+        String qrImage = qrService.getQrImageBase64(pallet.getQrCodePath());
+
+        return new ManualPalletCloseResponse("Pallet closed successfully",
+                pallet.getPalletSerialNumber(), qrImage);
     }
 
     private Pallet getOrCreateOpenPallet(Product product) {

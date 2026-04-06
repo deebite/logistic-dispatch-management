@@ -29,4 +29,5 @@ public interface PalletRepository extends JpaRepository<Pallet, UUID> {
 
     Long countByProductIdAndStatus(UUID productId, LifeCycleStatus status);
 
+    Optional<Pallet> findByPalletSerialNumber(String palletSerialNumber);
 }

@@ -25,11 +25,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/batch/**").hasAnyRole("ADMIN", "OPERATOR")
-                        .requestMatchers("/api/pallet/**").hasAnyRole("ADMIN", "OPERATOR")
-                        .requestMatchers("/api/products/**").hasAnyRole("ADMIN", "OPERATOR")
-                        .requestMatchers("/api/employee/**").hasRole("ADMIN")
-                        .requestMatchers("/api/report/**").hasRole("ADMIN")
+                        .requestMatchers("/api/batch/**").hasAnyRole("ADMIN", "SUPERVISOR", "OPERATOR")
+                        .requestMatchers("/api/pallet/**").hasAnyRole("ADMIN", "SUPERVISOR", "OPERATOR")
+                        .requestMatchers("/api/products/**").hasAnyRole("ADMIN", "SUPERVISOR", "OPERATOR")
+                        .requestMatchers("/api/employee/**").hasAnyRole("ADMIN", "SUPERVISOR")
+                        .requestMatchers("/api/report/**").hasAnyRole("ADMIN", "SUPERVISOR")
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .anyRequest().authenticated()).httpBasic(Customizer.withDefaults());
 

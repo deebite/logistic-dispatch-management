@@ -12,6 +12,9 @@ public class ProductResponseDto {
     private UUID productId;
     private String productCode;
     private String name;
+    private String description;
+    private String sapCode;
+    private String variant;
     private Integer boxCapacity;
     private Integer palletCapacity;
     private String status;

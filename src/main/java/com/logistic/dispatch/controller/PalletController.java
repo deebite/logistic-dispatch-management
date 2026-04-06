@@ -1,21 +1,19 @@
 package com.logistic.dispatch.controller;
 
+import com.logistic.dispatch.dto.ManualPalletCloseResponse;
 import com.logistic.dispatch.entitiy.Pallet;
 import com.logistic.dispatch.service.PalletService;
 import com.logistic.dispatch.utility.LifeCycleStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/pallet")
-@PreAuthorize("hasRole('ADMIN') or hasRole('OPERATOR')")
+@PreAuthorize("hasRole('ADMIN') or hasRole('SUPERVISOR') or hasRole('OPERATOR')")
 public class PalletController {
 
     private final PalletService palletService;
@@ -37,5 +35,10 @@ public class PalletController {
     @GetMapping("/status/{status}")
     public ResponseEntity<List<Pallet>> getByStatus(@PathVariable LifeCycleStatus status) {
         return ResponseEntity.ok(palletService.getPalletsByStatus(status));
+    }
+
+    @PostMapping("/{palletSerialNumber}/close")
+    public ResponseEntity<ManualPalletCloseResponse> closePallet(@PathVariable String palletSerialNumber) {
+        return ResponseEntity.ok(palletService.closePalletManually(palletSerialNumber));
     }
 }

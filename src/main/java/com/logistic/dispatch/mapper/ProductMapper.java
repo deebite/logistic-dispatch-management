@@ -34,6 +34,9 @@ public class ProductMapper {
                 product.getProductId(),
                 product.getProductCode(),
                 product.getName(),
+                product.getDescription(),
+                product.getSapCode(),
+                product.getVariant(),
                 product.getBoxCapacity(),
                 product.getPalletCapacity(),
                 product.getStatus().name()

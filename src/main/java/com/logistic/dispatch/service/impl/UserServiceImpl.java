@@ -12,6 +12,9 @@ import com.logistic.dispatch.service.UserService;
 import com.logistic.dispatch.utility.ProfileStatus;
 import com.logistic.dispatch.utility.UserRole;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,7 @@ import java.util.UUID;
 @Transactional
 public class UserServiceImpl implements UserService {
 
+    private static final Logger LOG = LoggerFactory.getLogger(UserServiceImpl.class);
     private final UserInfoRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -34,15 +38,38 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponseDto createUser(CreateUserRequestDto requestDTO) {
+
+        // ✅ Get logged-in user role
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String loggedInRole = authentication.getAuthorities().iterator().next().getAuthority();
+        loggedInRole = loggedInRole.replace("ROLE_", "");
+
+        UserRole loggedInUserRole = UserRole.valueOf(loggedInRole);
+        UserRole requestedRole = UserRole.valueOf(requestDTO.getRole().toUpperCase());
+
+        if (loggedInUserRole == UserRole.OPERATOR) {
+            LOG.error("Operator is not allowed to create users");
+            throw new UnsupportedOperationException("Operator is not allowed to create users!");
+        }
+
+        if (loggedInUserRole == UserRole.SUPERVISOR && requestedRole != UserRole.OPERATOR) {
+            LOG.error("Supervisor can only create OPERATOR users!");
+            throw new UnsupportedOperationException("Supervisor can only create OPERATOR users!");
+        }
+
         if (userRepository.existsByUsername(requestDTO.getUsername())) {
+            LOG.error("Username already exists!");
             throw new UsernameAlreadyExistsException("Username already exists!");
         }
-        System.out.println("Creating user: " + requestDTO.getUsername());
+
         UserInfo user = UserMapper.toEntity(requestDTO);
+        user.setRole(requestedRole);
         user.setPassword(passwordEncoder.encode(requestDTO.getPassword()));
-        UserRole role = UserRole.valueOf(requestDTO.getRole().toUpperCase());
-        user.setRole(role);
         user.setProfileStatus(ProfileStatus.ACTIVE);
+
+        LOG.info("LoggedIn Role: {} Requested Role to create: {}", loggedInUserRole, requestedRole);
+
+        LOG.info("User Created: {}", user);
         UserInfo savedUser = userRepository.save(user);
         return UserMapper.toResponse(savedUser);
     }
@@ -51,6 +78,7 @@ public class UserServiceImpl implements UserService {
     public UserResponseDto getUserById(UUID id) {
 
         UserInfo user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException("User not found"));
+
         return UserMapper.toResponse(user);
     }
 

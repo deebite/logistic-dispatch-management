@@ -140,7 +140,7 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findByProductCode(productCode)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found"));
 
-        return new ProductResponseDto(product.getProductId(), product.getProductCode(), product.getName(), product.getBoxCapacity(), product.getPalletCapacity(), product.getStatus().toString());
+        return new ProductResponseDto(product.getProductId(), product.getProductCode(), product.getName(),product.getDescription(), product.getSapCode(), product.getVariant(), product.getBoxCapacity(), product.getPalletCapacity(), product.getStatus().toString());
     }
 
 }

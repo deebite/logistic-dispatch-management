@@ -1,5 +1,6 @@
 package com.logistic.dispatch.service;
 
+import com.logistic.dispatch.dto.ManualPalletCloseResponse;
 import com.logistic.dispatch.entitiy.Batch;
 import com.logistic.dispatch.entitiy.Pallet;
 import com.logistic.dispatch.utility.LifeCycleStatus;
@@ -16,4 +17,6 @@ public interface PalletService {
     Pallet getOpenPalletByProductCode(String productCode);
 
     List<Pallet> getPalletsByStatus(LifeCycleStatus status);
+
+    ManualPalletCloseResponse closePalletManually(String palletSerialNumber);
 }

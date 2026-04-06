@@ -13,7 +13,7 @@ public class UserMapper {
         UserInfo user = new UserInfo();
         user.setName(dto.getName());
         user.setUsername(dto.getUsername());
-        user.setRole(UserRole.valueOf(dto.getRole().toUpperCase()));
+//        user.setRole(UserRole.valueOf(dto.getRole().toUpperCase()));
         user.setProfileStatus(ProfileStatus.ACTIVE);
 
         return user;

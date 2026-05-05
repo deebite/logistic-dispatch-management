@@ -30,16 +30,24 @@ public class ProductMapper {
     // Convert Entity → ResponseDTO
     public static ProductResponseDto toResponse(Product product) {
 
-        return new ProductResponseDto (
+        return new ProductResponseDto(
                 product.getProductId(),
                 product.getProductCode(),
                 product.getName(),
                 product.getDescription(),
-                product.getSapCode(),
+
+                product.getModel(),               // ✅ ADD
                 product.getVariant(),
+                product.getManufacturerCode(),   // ✅ ADD
+                product.getPartNo(),             // ✅ ADD
+                product.getPhotoUrl(),           // ✅ ADD
+
+                product.getSapCode(),
+
                 product.getBoxCapacity(),
                 product.getPalletCapacity(),
-                product.getStatus().name()
+
+                product.getStatus() != null ? product.getStatus().name() : null
         );
     }
 }

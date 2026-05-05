@@ -1,13 +1,27 @@
 package com.logistic.dispatch.dto;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
+import java.util.UUID;
+
+@Getter
+@Setter
 public class LoginResponse {
+
+    private UUID userId;
+    private String name;
     private String username;
     private String role;
+    private String token;
+
+    public LoginResponse(UUID userId, String name, String username, String role, String token) {
+        this.userId = userId;
+        this.name = name;
+        this.username = username;
+        this.role = role;
+        this.token = token;
+    }
+
 }

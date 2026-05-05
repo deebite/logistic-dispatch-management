@@ -1,46 +1,52 @@
 package com.logistic.dispatch.service.impl;
 
-import com.logistic.dispatch.dto.LoginRequest;
-import com.logistic.dispatch.dto.LoginResponse;
+import com.logistic.dispatch.dto.*;
 import com.logistic.dispatch.entitiy.UserInfo;
 import com.logistic.dispatch.repository.UserInfoRepository;
+import com.logistic.dispatch.security.JwtUtil;
 import com.logistic.dispatch.service.AuthService;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.authentication.*;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuthServiceImpl implements AuthService {
 
     private final AuthenticationManager authenticationManager;
-    private final UserInfoRepository userInfoRepository;
+    private final UserInfoRepository userRepo;
+    private final JwtUtil jwtUtil;
 
-    public AuthServiceImpl(AuthenticationManager authenticationManager, UserInfoRepository userInfoRepository) {
+    public AuthServiceImpl(AuthenticationManager authenticationManager,
+                           UserInfoRepository userRepo,
+                           JwtUtil jwtUtil) {
         this.authenticationManager = authenticationManager;
-        this.userInfoRepository = userInfoRepository;
+        this.userRepo = userRepo;
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
-    public LoginResponse login(LoginRequest loginRequest) {
-        // 🔥 Authenticate user
-        Authentication authentication = authenticationManager.authenticate(
+    public LoginResponse login(LoginRequest request) {
+
+        authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
-                        loginRequest.getPassword()
+                        request.getUsername(),
+                        request.getPassword()
                 )
         );
 
-        if (authentication.isAuthenticated()) {
-            UserInfo user = userInfoRepository.findByUsername(loginRequest.getUsername())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+        UserInfo user = userRepo.findByUsername(request.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-            return new LoginResponse(
-                    user.getUsername(),
-                    user.getRole().name()
-            );
-        }
+        String token = jwtUtil.generateToken(
+                user.getUsername(),
+                user.getRole().name()
+        );
 
-        throw new RuntimeException("Invalid credentials");
+        return new LoginResponse(
+                user.getUserId(),
+                user.getName(),
+                user.getUsername(),
+                user.getRole().name(),
+                token
+        );
     }
 }

@@ -17,5 +17,7 @@ public class ProductResponseDto {
     private String variant;
     private Integer boxCapacity;
     private Integer palletCapacity;
+    private String manufacturerCode;
+    private String revisionCode;
     private String status;
 }

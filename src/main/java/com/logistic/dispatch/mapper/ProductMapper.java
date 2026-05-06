@@ -22,6 +22,7 @@ public class ProductMapper {
         product.setBoxCapacity(dto.getBoxCapacity());
         product.setPalletCapacity(dto.getPalletCapacity());
         product.setSapCode(dto.getSapCode());
+        product.setRevisionCode(dto.getRevisionCode());
         product.setStatus(ProductStatus.ACTIVE);
 
         return product;
@@ -39,6 +40,8 @@ public class ProductMapper {
                 product.getVariant(),
                 product.getBoxCapacity(),
                 product.getPalletCapacity(),
+                product.getManufacturerCode(),
+                product.getRevisionCode(),
                 product.getStatus().name()
         );
     }

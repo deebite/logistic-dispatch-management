@@ -43,4 +43,7 @@ public class ProductRequestDto {
 
     @NotBlank(message = "SAP Code is required", groups = OnCreate.class)
     private String sapCode;
+
+    @NotBlank(message = "Revision is required", groups = OnCreate.class)
+    private String revisionCode;
 }

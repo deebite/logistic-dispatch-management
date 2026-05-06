@@ -2,6 +2,7 @@ package com.logistic.dispatch.entitiy;
 
 import com.logistic.dispatch.utility.ProductStatus;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -51,8 +52,12 @@ public class Product extends BaseEntity{
     @Column(name = "pallet_capacity", nullable = false)
     private Integer palletCapacity;
 
-    @Column(name = "sap_code")
+    @NotBlank(message = "SAP code is required")
+    @Column(name = "sap_code", nullable = false)
     private String sapCode;
+
+    @Column(name = "revision_code")
+    private String revisionCode;
 
     @Column(name = "status")
     @Enumerated(EnumType.STRING)

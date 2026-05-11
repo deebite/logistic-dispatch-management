@@ -42,6 +42,9 @@ public class ProductMapper {
                 product.getPalletCapacity(),
                 product.getManufacturerCode(),
                 product.getRevisionCode(),
+                product.getModel(),
+                product.getPartNo(),
+                product.getPhotoUrl(),
                 product.getStatus().name()
         );
     }

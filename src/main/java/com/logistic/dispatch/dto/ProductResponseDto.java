@@ -19,5 +19,8 @@ public class ProductResponseDto {
     private Integer palletCapacity;
     private String manufacturerCode;
     private String revisionCode;
+    private String model;
+    private String partNo;
+    private String photoUrl;
     private String status;
 }

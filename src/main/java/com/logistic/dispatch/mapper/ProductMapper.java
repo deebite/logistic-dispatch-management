@@ -18,7 +18,7 @@ public class ProductMapper {
         product.setVariant(dto.getVariant());
         product.setManufacturerCode(dto.getManufacturerCode());
         product.setPartNo(dto.getPartNo());
-        product.setPhotoUrl(dto.getPhotoUrl());
+//        product.setPhotoUrl(dto.getPhotoUrl());
         product.setBoxCapacity(dto.getBoxCapacity());
         product.setPalletCapacity(dto.getPalletCapacity());
         product.setSapCode(dto.getSapCode());

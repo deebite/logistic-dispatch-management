@@ -132,4 +132,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleInvalidCredentials(InvalidCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", ex.getMessage()));
     }
+
+    @ExceptionHandler(ImageUploadException.class)
+    public ResponseEntity<Map<String, String>> handleImageUpload(ImageUploadException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", ex.getMessage()));
+    }
 }

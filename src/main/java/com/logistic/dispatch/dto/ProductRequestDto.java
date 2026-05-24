@@ -30,8 +30,8 @@ public class ProductRequestDto {
     @NotBlank(message = "Part No is required", groups = OnCreate.class)
     private String partNo;
 
-    @NotBlank(message = "Photo URL is required", groups = OnCreate.class)
-    private String photoUrl;
+//    @NotBlank(message = "Photo URL is required", groups = OnCreate.class)
+//    private String photoUrl;
 
     @NotNull
     @Min(value = 1, message = "Box capacity must be at least 1", groups = OnCreate.class)

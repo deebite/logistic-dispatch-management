@@ -1,16 +1,21 @@
 package com.logistic.dispatch.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logistic.dispatch.dto.ProductRequestDto;
 import com.logistic.dispatch.dto.ProductResponseDto;
 import com.logistic.dispatch.service.ProductService;
 import com.logistic.dispatch.utility.ProductStatus;
 import com.logistic.dispatch.validation.OnCreate;
 import com.logistic.dispatch.validation.OnUpdate;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.print.attribute.standard.Media;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,13 +25,17 @@ public class ProductController {
 
     private final ProductService productService;
 
-    public ProductController(ProductService productService) {
+    private final ObjectMapper objectMapper;
+
+    public ProductController(ProductService productService,  ObjectMapper objectMapper) {
         this.productService = productService;
+        this.objectMapper = objectMapper;
     }
 
-    @PostMapping("/create")
-    public ResponseEntity<ProductResponseDto> createProduct(@Validated(OnCreate.class) @RequestBody ProductRequestDto dto) {
-        return ResponseEntity.ok(productService.createProduct(dto));
+    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductResponseDto> createProduct(@RequestPart("product") String productDetails, @RequestPart MultipartFile productImage) throws Exception {
+        ProductRequestDto productRequestDto = objectMapper.readValue(productDetails, ProductRequestDto.class);
+        return ResponseEntity.ok(productService.createProduct(productRequestDto, productImage));
     }
 
     @GetMapping("/all")
@@ -66,6 +75,11 @@ public class ProductController {
     public ResponseEntity<String> deleteProduct(@PathVariable UUID id) {
         productService.deleteProduct(id);
         return ResponseEntity.ok("Product deleted successfully");
+    }
+
+    @PatchMapping(value = "/{productCode}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductResponseDto> updateProductImage(@PathVariable String productCode, @RequestPart("image") MultipartFile image) {
+        return ResponseEntity.ok(productService.updateProductImage(productCode, image));
     }
 }
 

@@ -12,4 +12,6 @@ public interface BatchService {
     BulkScanResponseDto bulkScan(BulkScanRequestDto bulkScanRequestDto);
 
     ManualBatchCloseResponse closeBatchManually(String batchSerialNumber);
+
+    BatchQrResponseDto  reprintBatchQr(String batchSerialNumber);
 }

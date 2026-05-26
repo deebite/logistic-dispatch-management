@@ -7,6 +7,8 @@ import com.logistic.dispatch.exception.InvalidCredentialsException;
 import com.logistic.dispatch.repository.UserInfoRepository;
 import com.logistic.dispatch.security.JwtUtil;
 import com.logistic.dispatch.service.AuthService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +20,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final UserInfoRepository userRepo;
     private final JwtUtil jwtUtil;
+    private static final Logger LOG = LoggerFactory.getLogger(AuthServiceImpl.class);
 
     public AuthServiceImpl(AuthenticationManager authenticationManager,
                            UserInfoRepository userRepo,
@@ -39,6 +42,7 @@ public class AuthServiceImpl implements AuthService {
                     )
             );
         } catch (BadCredentialsException e) {
+            LOG.error("Authentication failed for user: {}", request.getUsername(), e);
             throw new InvalidCredentialsException("Invalid username or password");
         }
 
@@ -48,7 +52,7 @@ public class AuthServiceImpl implements AuthService {
         String token = jwtUtil.generateToken(
                 user.getUsername(),
                 user.getRole().name());
-
+        LOG.info("Authentication successful for user: {}", request.getUsername());
         return new LoginResponse(
                 user.getUserId(),
                 user.getName(),

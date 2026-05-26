@@ -1,6 +1,7 @@
 package com.logistic.dispatch.service;
 
 import com.logistic.dispatch.dto.ManualPalletCloseResponse;
+import com.logistic.dispatch.dto.PalletQrResponseDto;
 import com.logistic.dispatch.entitiy.Batch;
 import com.logistic.dispatch.entitiy.Pallet;
 import com.logistic.dispatch.utility.LifeCycleStatus;
@@ -10,7 +11,7 @@ import java.util.UUID;
 
 public interface PalletService {
 
-    void assignBatchToPallet(Batch batch);
+    Pallet assignBatchToPallet(Batch batch);
 
     Pallet getPalletById(UUID palletId);
 
@@ -19,4 +20,6 @@ public interface PalletService {
     List<Pallet> getPalletsByStatus(LifeCycleStatus status);
 
     ManualPalletCloseResponse closePalletManually(String palletSerialNumber);
+
+    PalletQrResponseDto reprintPalletQr(String palletSerialNumber);
 }

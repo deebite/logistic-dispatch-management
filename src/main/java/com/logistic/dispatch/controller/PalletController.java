@@ -1,6 +1,7 @@
 package com.logistic.dispatch.controller;
 
 import com.logistic.dispatch.dto.ManualPalletCloseResponse;
+import com.logistic.dispatch.dto.PalletQrResponseDto;
 import com.logistic.dispatch.entitiy.Pallet;
 import com.logistic.dispatch.service.PalletService;
 import com.logistic.dispatch.utility.LifeCycleStatus;
@@ -40,5 +41,10 @@ public class PalletController {
     @PostMapping("/{palletSerialNumber}/close")
     public ResponseEntity<ManualPalletCloseResponse> closePallet(@PathVariable String palletSerialNumber) {
         return ResponseEntity.ok(palletService.closePalletManually(palletSerialNumber));
+    }
+
+    @GetMapping("/{palletSerialNumber}/reprint-qr")
+    public ResponseEntity<PalletQrResponseDto> reprintPalletQr(@PathVariable String palletSerialNumber) {
+        return ResponseEntity.ok(palletService.reprintPalletQr(palletSerialNumber));
     }
 }

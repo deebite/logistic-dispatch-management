@@ -3,6 +3,7 @@ package com.logistic.dispatch.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logistic.dispatch.dto.ManualPalletCloseResponse;
+import com.logistic.dispatch.dto.PalletQrResponseDto;
 import com.logistic.dispatch.entitiy.Batch;
 import com.logistic.dispatch.entitiy.Pallet;
 import com.logistic.dispatch.entitiy.Product;
@@ -17,6 +18,8 @@ import com.logistic.dispatch.utility.LifeCycleStatus;
 import com.logistic.dispatch.utility.QrService;
 import com.logistic.dispatch.utility.QrStatus;
 import jakarta.persistence.OptimisticLockException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +39,7 @@ public class PalletServiceImpl implements PalletService {
     private final ProductRepository productRepository;
     private final ObjectMapper objectMapper;
     private final QrService qrService;
+    private static final Logger LOG = LoggerFactory.getLogger(PalletServiceImpl.class);
 
     public PalletServiceImpl(PalletRepository palletRepository, ProductRepository productRepository, ObjectMapper objectMapper, QrService qrService) {
         this.palletRepository = palletRepository;
@@ -45,8 +49,8 @@ public class PalletServiceImpl implements PalletService {
     }
 
     @Override
-    public void assignBatchToPallet(Batch batch) {
-
+    public Pallet assignBatchToPallet(Batch batch) {
+        LOG.info("Coming batch: {}", batch);
         Product product = productRepository.findById(batch.getProductId())
                 .orElseThrow(() -> new PalletAssignmentException("Product not found for pallet assignment"));
 
@@ -55,6 +59,7 @@ public class PalletServiceImpl implements PalletService {
         List<String> batchList = pallet.getBatchSerialList();
 
         if (batchList.contains(batch.getBatchSerialNumber())) {
+            LOG.info("Batch already assigned to pallet: {}", batch);
             throw new PalletAssignmentException("Batch already assigned to pallet: " + pallet.getPalletSerialNumber());
         }
 
@@ -72,31 +77,37 @@ public class PalletServiceImpl implements PalletService {
         }
 
         try {
-            palletRepository.save(pallet);
+            Pallet savedPallet = palletRepository.save(pallet);
+            LOG.info("Saving batch in pallet: {}", savedPallet);
+            return savedPallet;
         } catch (OptimisticLockException e) {
+            LOG.error("Concurrent update detected while assigning batch to pallet: {}", e.getMessage());
             throw new PalletAssignmentException("Concurrent update detected while assigning batch to pallet");
         }
     }
 
     @Override
     public Pallet getPalletById(UUID palletId) {
+        LOG.info("Getting pallet_id: {}", palletId);
         return palletRepository.findById(palletId)
                 .orElseThrow(() -> new PalletAssignmentException("Pallet not found with ID: " + palletId));
     }
 
     @Override
     public Pallet getOpenPalletByProductCode(String productCode) {
-
+        LOG.info("Getting open pallet for product code: {}", productCode);
         Product product = productRepository.findByProductCode(productCode)
                 .orElseThrow(() -> new PalletAssignmentException("Product not found: " + productCode));
 
         List<Pallet> openPallets = palletRepository.findByProductIdAndStatus(product.getProductId(), LifeCycleStatus.OPEN);
 
         if (openPallets.isEmpty()) {
+            LOG.error("No open pallets found for product code: {}", productCode);
             throw new PalletAssignmentException("No OPEN pallet found for product: " + productCode);
         }
 
         if (openPallets.size() > 1) {
+            LOG.error("Multiple open pallets found for product code: {}", productCode);
             throw new PalletAssignmentException("Data integrity error: Multiple OPEN pallets found for product: " + productCode);
         }
         return openPallets.get(0);
@@ -104,10 +115,11 @@ public class PalletServiceImpl implements PalletService {
 
     @Override
     public List<Pallet> getPalletsByStatus(LifeCycleStatus status) {
-
+        LOG.info("Getting pallets by status: {}", status);
         List<Pallet> pallets = palletRepository.findByStatus(status);
 
         if (pallets.isEmpty()) {
+            LOG.error("No pallets found for status: {}", status);
             throw new PalletAssignmentException("No pallets found with status: " + status);
         }
 
@@ -116,11 +128,12 @@ public class PalletServiceImpl implements PalletService {
 
     @Override
     public ManualPalletCloseResponse closePalletManually(String palletSerialNumber) {
-
+        LOG.info("Closing pallet manually: {}", palletSerialNumber);
         Pallet pallet = palletRepository.findByPalletSerialNumber(palletSerialNumber)
                 .orElseThrow(() -> new UserNotFoundException("Pallet not found!"));
 
         if (pallet.getStatus() == LifeCycleStatus.CLOSED) {
+            LOG.error("Pallet is already closed: {}", palletSerialNumber);
             throw new AlreadyClosed("Pallet already closed!");
         }
 
@@ -133,27 +146,29 @@ public class PalletServiceImpl implements PalletService {
         palletRepository.save(pallet);
 
         String qrImage = qrService.getQrImageBase64(pallet.getQrCodePath());
-
+        LOG.info("QR image generated: {}", qrImage);
         return new ManualPalletCloseResponse("Pallet closed successfully",
                 pallet.getPalletSerialNumber(), qrImage);
     }
 
     private Pallet getOrCreateOpenPallet(Product product) {
-
+        LOG.info("Getting or creating open pallet for product: {}", product.getProductCode());
         List<Pallet> openPallets = palletRepository.findByProductIdAndStatus(product.getProductId(), LifeCycleStatus.OPEN);
 
         if (openPallets.size() > 1) {
+            LOG.error("Data integrity error: Multiple OPEN pallets found for product: {}", product.getProductCode());
             throw new PalletAssignmentException("Data integrity error: Multiple OPEN pallets found for product: " + product.getProductCode());
         }
 
         if (openPallets.isEmpty()) {
+            LOG.info("No open pallet found for product: {}", product.getProductCode());
             return createNewPallet(product);
         }
         return openPallets.get(0);
     }
 
     private Pallet createNewPallet(Product product) {
-
+        LOG.info("Creating new pallet: {}", product.getProductCode());
         LocalDate today = LocalDate.now();
         String formattedDate = today.format(DateTimeFormatter.BASIC_ISO_DATE);
 
@@ -173,8 +188,24 @@ public class PalletServiceImpl implements PalletService {
         pallet.setCurrentBatches(0);
         pallet.setStatus(LifeCycleStatus.OPEN);
         pallet.setBatchSerialList(new ArrayList<>());
-
+        LOG.info("New pallet created: {}", pallet);
         return palletRepository.save(pallet);
+    }
+
+    @Override
+    public PalletQrResponseDto reprintPalletQr(String palletSerialNumber) {
+        LOG.info("Reprinting QR for pallet: {}", palletSerialNumber);
+        Pallet pallet = palletRepository.findByPalletSerialNumber(palletSerialNumber)
+                        .orElseThrow(() -> new UserNotFoundException("Pallet not found!"));
+
+        if (pallet.getStatus() != LifeCycleStatus.CLOSED) {
+            LOG.error("QR can only be reprinted for CLOSED pallet: {}", palletSerialNumber);
+            throw new RuntimeException("QR can only be reprinted for CLOSED pallet");
+        }
+
+        String qrImage = qrService.generatePalletQrBase64(pallet);
+        LOG.info("Reprinting QR for pallet: {}", palletSerialNumber);
+        return new PalletQrResponseDto(pallet.getPalletSerialNumber(), qrImage);
     }
 
     private List<String> getBatchList(String json) {

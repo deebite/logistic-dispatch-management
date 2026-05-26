@@ -25,5 +25,9 @@ public class ScanResponseDto {
 
     private int remainingUnits;
 
-    private String qrImage;
+    private String batchQrImage;
+
+    private String palletSerialNumber;
+
+    private String palletQrImage;
 }

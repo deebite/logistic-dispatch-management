@@ -44,4 +44,9 @@ public class BatchController {
     public ResponseEntity<ManualBatchCloseResponse> closeBatch(@PathVariable String batchSerialNumber) {
         return ResponseEntity.ok(batchService.closeBatchManually(batchSerialNumber));
     }
+
+    @GetMapping("/{batchSerialNumber}/reprint-qr")
+    public ResponseEntity<BatchQrResponseDto > reprintBatchQr(@PathVariable String batchSerialNumber) {
+        return ResponseEntity.ok(batchService.reprintBatchQr(batchSerialNumber));
+    }
 }

@@ -17,14 +17,13 @@ import org.springframework.stereotype.Component;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 @Component
 public class QrService {
@@ -176,5 +175,89 @@ public class QrService {
 
         g2d.dispose();
         return finalImage;
+    }
+
+    public String generateBatchQrBase64(Batch batch) {
+        try {
+            Map<String, Object> qrData = new HashMap<>();
+
+            qrData.put("batchId", batch.getBatchId());
+            qrData.put("batchSerial", batch.getBatchSerialNumber());
+            qrData.put("productCode", batch.getProductId());
+            qrData.put("totalUnits", batch.getCurrentUnits());
+            qrData.put("serialNumbers", batch.getProductSerialList());
+            qrData.put("generatedAt", LocalDateTime.now().toString());
+
+            String qrContent = objectMapper.writeValueAsString(qrData);
+
+            int width = 400;
+            int height = 400;
+
+            QRCodeWriter qrCodeWriter = new QRCodeWriter();
+
+            BitMatrix bitMatrix = qrCodeWriter.encode(
+                    qrContent,
+                    BarcodeFormat.QR_CODE,
+                    width,
+                    height);
+
+            BufferedImage finalImage = addLabelToQr(bitMatrix, "Batch: " + batch.getBatchSerialNumber());
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(finalImage, "PNG", baos);
+
+            byte[] imageBytes = baos.toByteArray();
+            return Base64.getEncoder().encodeToString(imageBytes);
+        } catch (Exception e) {
+
+            throw new QrGenerationException(
+                    "Failed to generate batch QR",
+                    e
+            );
+        }
+    }
+
+    public String generatePalletQrBase64(Pallet pallet) {
+
+        try {
+            List<Map<String, Object>> batchDetails = new ArrayList<>();
+            for (String batchSerial : pallet.getBatchSerialList()) {
+
+                Batch batch = batchRepository.findByBatchSerialNumber(batchSerial)
+                        .orElseThrow(() -> new RuntimeException("Batch not found: " + batchSerial));
+
+                List<String> serialNumbers = batch.getProductSerialList() != null ? batch.getProductSerialList() : new ArrayList<>();
+
+                Map<String, Object> batchMap = new HashMap<>();
+                batchMap.put("batchNumber", batch.getBatchSerialNumber());
+                batchMap.put("serialCount", serialNumbers.size());
+                batchMap.put("serialNumbers", serialNumbers);
+                batchDetails.add(batchMap);
+            }
+
+            Map<String, Object> qrData = new HashMap<>();
+            qrData.put("palletNumber", pallet.getPalletSerialNumber());
+            qrData.put("productId", pallet.getProductId());
+            qrData.put("batchCount", pallet.getCurrentBatches());
+            qrData.put("batches", batchDetails);
+            qrData.put("generatedAt", LocalDateTime.now().toString());
+
+            String qrContent =
+                    objectMapper.writeValueAsString(qrData);
+
+            QRCodeWriter qrCodeWriter = new QRCodeWriter();
+
+            BitMatrix bitMatrix = qrCodeWriter.encode(qrContent, BarcodeFormat.QR_CODE, 400, 400);
+
+            BufferedImage finalImage = addLabelToQr(bitMatrix, "Pallet: " + pallet.getPalletSerialNumber());
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+            ImageIO.write(finalImage, "PNG", baos);
+            byte[] imageBytes = baos.toByteArray();
+            return Base64.getEncoder().encodeToString(imageBytes);
+
+        } catch (Exception e) {
+            throw new QrGenerationException("Failed to generate pallet QR", e);
+        }
     }
 }

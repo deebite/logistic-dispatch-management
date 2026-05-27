@@ -1,7 +1,8 @@
 package com.logistic.dispatch.service;
 
 import com.logistic.dispatch.dto.*;
-import com.logistic.dispatch.entitiy.Batch;
+import com.logistic.dispatch.utility.LifeCycleStatus;
+import org.springframework.data.domain.Page;
 
 public interface BatchService {
 
@@ -13,5 +14,7 @@ public interface BatchService {
 
     ManualBatchCloseResponse closeBatchManually(String batchSerialNumber);
 
-    BatchQrResponseDto  reprintBatchQr(String batchSerialNumber);
+    BatchQrResponseDto reprintBatchQr(String batchSerialNumber);
+
+    Page<BatchSummaryResponseDto> getBatchesByStatus(LifeCycleStatus status, int page, int size);
 }

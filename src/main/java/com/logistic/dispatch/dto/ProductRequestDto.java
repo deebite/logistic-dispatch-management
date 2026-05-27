@@ -4,6 +4,7 @@ import com.logistic.dispatch.validation.OnCreate;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 @Data
@@ -27,18 +28,19 @@ public class ProductRequestDto {
     @NotBlank(message = "Manufacture Code is required", groups = OnCreate.class)
     private String manufacturerCode;
 
-    @NotBlank(message = "Part No is required", groups = OnCreate.class)
-    private String partNo;
+    @NotNull(message = "Monthly Target is required", groups = OnCreate.class)
+    @Positive(message = "Monthly target must be positive", groups = OnCreate.class)
+    private Integer monthlyTarget;
 
 //    @NotBlank(message = "Photo URL is required", groups = OnCreate.class)
 //    private String photoUrl;
 
-    @NotNull
-    @Min(value = 1, message = "Box capacity must be at least 1", groups = OnCreate.class)
+    @NotNull(message = "Box capacity is required", groups = OnCreate.class)
+    @Positive(message = "Box capacity must be positive", groups = OnCreate.class)
     private Integer boxCapacity;
 
-    @NotNull
-    @Min(value = 1, message = "Pallet capacity must be at least 1", groups = OnCreate.class)
+    @NotNull(message = "Pallet capacity is required", groups = OnCreate.class)
+    @Positive(message = "Pallet capacity must be positive", groups = OnCreate.class)
     private Integer palletCapacity;
 
     @NotBlank(message = "SAP Code is required", groups = OnCreate.class)

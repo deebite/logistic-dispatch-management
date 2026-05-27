@@ -1,15 +1,13 @@
 package com.logistic.dispatch.controller;
 
 import com.logistic.dispatch.dto.*;
-import com.logistic.dispatch.entitiy.Batch;
 import com.logistic.dispatch.service.BatchService;
+import com.logistic.dispatch.utility.LifeCycleStatus;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/batch")
@@ -46,7 +44,14 @@ public class BatchController {
     }
 
     @GetMapping("/{batchSerialNumber}/reprint-qr")
-    public ResponseEntity<BatchQrResponseDto > reprintBatchQr(@PathVariable String batchSerialNumber) {
+    public ResponseEntity<BatchQrResponseDto> reprintBatchQr(@PathVariable String batchSerialNumber) {
         return ResponseEntity.ok(batchService.reprintBatchQr(batchSerialNumber));
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<BatchSummaryResponseDto>> getBatchesByStatus(@RequestParam LifeCycleStatus status,
+                                                                            @RequestParam(defaultValue = "0") int page,
+                                                                            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(batchService.getBatchesByStatus(status, page, size));
     }
 }

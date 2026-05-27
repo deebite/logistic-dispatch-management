@@ -20,7 +20,7 @@ public class ProductResponseDto {
     private String manufacturerCode;
     private String revisionCode;
     private String model;
-    private String partNo;
+    private Integer monthlyTarget;
     private String photoUrl;
     private String status;
 }

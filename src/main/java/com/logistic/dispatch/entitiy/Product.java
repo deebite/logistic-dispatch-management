@@ -40,8 +40,8 @@ public class Product extends BaseEntity{
     @Column(name = "manufacturer_code")
     private String manufacturerCode;
 
-    @Column(name = "part_no")
-    private String partNo;
+    @Column(name = "monthly_target")
+    private Integer monthlyTarget;;
 
     @Column(name = "photo_url")
     private String photoUrl;

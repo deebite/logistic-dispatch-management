@@ -17,6 +17,10 @@ import com.logistic.dispatch.utility.QrService;
 import com.logistic.dispatch.utility.QrStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -324,5 +328,21 @@ public class BatchServiceImpl implements BatchService {
         String qrImage = qrService.generateBatchQrBase64(batch);
         LOG.info("Reprinted QR for batch: {} successful", batchSerialNumber);
         return new BatchQrResponseDto(batch.getBatchSerialNumber(), qrImage);
+    }
+
+    @Override
+    public Page<BatchSummaryResponseDto> getBatchesByStatus(LifeCycleStatus status, int page, int size) {
+        LOG.info("Getting batches by status: {} and page {}, size {}", status,  page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Page<Batch> batchPage = batchRepository.findByStatus(status, pageable);
+        LOG.info("Found {} batches with status: {}", batchPage.getTotalElements(), status);
+        return batchPage.map(batch -> new BatchSummaryResponseDto(
+                        batch.getBatchSerialNumber(),
+                        batch.getCurrentUnits(),
+                        batch.getMaxUnits(),
+                        batch.getStatus(),
+                        batch.getCreatedAt(),
+                        batch.getClosedAt()));
     }
 }

@@ -3,6 +3,8 @@ package com.logistic.dispatch.repository;
 import com.logistic.dispatch.entitiy.Batch;
 import com.logistic.dispatch.utility.LifeCycleStatus;
 import com.logistic.dispatch.utility.QrStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -39,4 +41,5 @@ public interface BatchRepository extends JpaRepository<Batch, UUID> {
     @Query("SELECT b FROM Batch b WHERE b.productId = :productId AND b.status = 'CLOSED' AND b.closedAt BETWEEN :start AND :end ORDER BY b.closedAt DESC")
     List<Batch> findClosedBatchesByDate(UUID productId, LocalDateTime start, LocalDateTime end);
 
+    Page<Batch> findByStatus(LifeCycleStatus status, Pageable pageable);
 }

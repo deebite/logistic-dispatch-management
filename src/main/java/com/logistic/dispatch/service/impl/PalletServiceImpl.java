@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logistic.dispatch.dto.ManualPalletCloseResponse;
 import com.logistic.dispatch.dto.PalletQrResponseDto;
+import com.logistic.dispatch.dto.PalletSummaryResponseDto;
 import com.logistic.dispatch.entitiy.Batch;
 import com.logistic.dispatch.entitiy.Pallet;
 import com.logistic.dispatch.entitiy.Product;
@@ -20,6 +21,10 @@ import com.logistic.dispatch.utility.QrStatus;
 import jakarta.persistence.OptimisticLockException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -206,6 +211,22 @@ public class PalletServiceImpl implements PalletService {
         String qrImage = qrService.generatePalletQrBase64(pallet);
         LOG.info("Reprinting QR for pallet: {}", palletSerialNumber);
         return new PalletQrResponseDto(pallet.getPalletSerialNumber(), qrImage);
+    }
+
+    @Override
+    public Page<PalletSummaryResponseDto> getPalletsByStatus(LifeCycleStatus status, int page, int size) {
+        LOG.info("Getting pallets by status: {}, page: {}, size: {}", status, page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Page<Pallet> palletPage = palletRepository.findByStatus(status, pageable);
+        LOG.info("Found {} pallets with status: {}", palletPage.getTotalElements(), status);
+        return palletPage.map(pallet -> new PalletSummaryResponseDto(
+                        pallet.getPalletSerialNumber(),
+                        pallet.getCurrentBatches(),
+                        pallet.getMaxBatches(),
+                        pallet.getStatus(),
+                        pallet.getCreatedAt(),
+                        pallet.getClosedAt()));
     }
 
     private List<String> getBatchList(String json) {

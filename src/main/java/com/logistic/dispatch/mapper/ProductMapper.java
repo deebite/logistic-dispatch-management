@@ -17,7 +17,7 @@ public class ProductMapper {
         product.setModel(dto.getModel());
         product.setVariant(dto.getVariant());
         product.setManufacturerCode(dto.getManufacturerCode());
-        product.setPartNo(dto.getPartNo());
+        product.setMonthlyTarget(dto.getMonthlyTarget());
 //        product.setPhotoUrl(dto.getPhotoUrl());
         product.setBoxCapacity(dto.getBoxCapacity());
         product.setPalletCapacity(dto.getPalletCapacity());
@@ -43,7 +43,7 @@ public class ProductMapper {
                 product.getManufacturerCode(),
                 product.getRevisionCode(),
                 product.getModel(),
-                product.getPartNo(),
+                product.getMonthlyTarget(),
                 product.getPhotoUrl(),
                 product.getStatus().name()
         );

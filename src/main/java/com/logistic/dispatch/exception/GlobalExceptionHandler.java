@@ -137,4 +137,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleImageUpload(ImageUploadException ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", ex.getMessage()));
     }
+
+    @ExceptionHandler(RequestValidationException.class)
+    public ResponseEntity<Map<String, String>> handleValidationException(RequestValidationException ex) {
+        return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+    }
 }

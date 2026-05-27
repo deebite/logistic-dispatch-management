@@ -101,8 +101,8 @@ public class ProductServiceImpl implements ProductService {
             product.setManufacturerCode(dto.getManufacturerCode());
         }
 
-        if (dto.getPartNo() != null) {
-            product.setPartNo(dto.getPartNo());
+        if (dto.getMonthlyTarget() != null) {
+            product.setMonthlyTarget(dto.getMonthlyTarget());
         }
 
 //        if (dto.getPhotoUrl() != null) {
@@ -151,7 +151,7 @@ public class ProductServiceImpl implements ProductService {
         LOG.info("Retrieving product with product_code {}", productCode);
         Product product = productRepository.findByProductCode(productCode)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found"));
-        return new ProductResponseDto(product.getProductId(), product.getProductCode(), product.getName(), product.getDescription(), product.getSapCode(), product.getVariant(), product.getBoxCapacity(), product.getPalletCapacity(), product.getManufacturerCode(), product.getRevisionCode(), product.getModel(), product.getPartNo(), product.getPhotoUrl(), product.getStatus().toString());
+        return new ProductResponseDto(product.getProductId(), product.getProductCode(), product.getName(), product.getDescription(), product.getSapCode(), product.getVariant(), product.getBoxCapacity(), product.getPalletCapacity(), product.getManufacturerCode(), product.getRevisionCode(), product.getModel(), product.getMonthlyTarget(), product.getPhotoUrl(), product.getStatus().toString());
     }
 
     @Override

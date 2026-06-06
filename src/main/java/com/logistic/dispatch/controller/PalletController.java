@@ -1,6 +1,7 @@
 package com.logistic.dispatch.controller;
 
 import com.logistic.dispatch.dto.ManualPalletCloseResponse;
+import com.logistic.dispatch.dto.PalletBatchesResponseDto;
 import com.logistic.dispatch.dto.PalletQrResponseDto;
 import com.logistic.dispatch.dto.PalletSummaryResponseDto;
 import com.logistic.dispatch.entitiy.Pallet;
@@ -55,5 +56,11 @@ public class PalletController {
                                                                              @RequestParam(defaultValue = "0") int page,
                                                                              @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(palletService.getPalletsByStatus(status, page, size));
+    }
+
+    @GetMapping("/{palletSerialNumber}/batches")
+    public ResponseEntity<PalletBatchesResponseDto>
+    getBatchesInPallet(@PathVariable String palletSerialNumber) {
+        return ResponseEntity.ok(palletService.getBatchesInPallet(palletSerialNumber));
     }
 }

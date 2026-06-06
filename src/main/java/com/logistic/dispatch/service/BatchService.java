@@ -17,4 +17,6 @@ public interface BatchService {
     BatchQrResponseDto reprintBatchQr(String batchSerialNumber);
 
     Page<BatchSummaryResponseDto> getBatchesByStatus(LifeCycleStatus status, int page, int size);
+
+    BatchProductsResponseDto getProductsInBatch(String batchSerialNumber);
 }

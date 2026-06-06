@@ -1,6 +1,7 @@
 package com.logistic.dispatch.service;
 
 import com.logistic.dispatch.dto.ManualPalletCloseResponse;
+import com.logistic.dispatch.dto.PalletBatchesResponseDto;
 import com.logistic.dispatch.dto.PalletQrResponseDto;
 import com.logistic.dispatch.dto.PalletSummaryResponseDto;
 import com.logistic.dispatch.entitiy.Batch;
@@ -26,4 +27,6 @@ public interface PalletService {
     PalletQrResponseDto reprintPalletQr(String palletSerialNumber);
 
     Page<PalletSummaryResponseDto> getPalletsByStatus(LifeCycleStatus status, int page, int size);
+
+    PalletBatchesResponseDto getBatchesInPallet(String palletSerialNumber);
 }

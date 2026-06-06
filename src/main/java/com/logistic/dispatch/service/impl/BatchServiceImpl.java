@@ -345,4 +345,21 @@ public class BatchServiceImpl implements BatchService {
                         batch.getCreatedAt(),
                         batch.getClosedAt()));
     }
+
+    @Override
+    public BatchProductsResponseDto getProductsInBatch(String batchSerialNumber) {
+
+        Batch batch = batchRepository.findByBatchSerialNumber(batchSerialNumber)
+                .orElseThrow(() -> new ProductNotFoundException("Batch not found"));
+
+        Product product = productRepository.findById(batch.getProductId())
+                .orElseThrow(() -> new ProductNotFoundException("Product not found"));
+
+        return new BatchProductsResponseDto(
+                batch.getBatchSerialNumber(),
+                product.getProductCode(),
+                batch.getCurrentUnits(),
+                batch.getProductSerialList()
+        );
+    }
 }

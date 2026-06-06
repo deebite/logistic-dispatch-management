@@ -3,15 +3,13 @@ package com.logistic.dispatch.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logistic.dispatch.dto.ManualPalletCloseResponse;
+import com.logistic.dispatch.dto.PalletBatchesResponseDto;
 import com.logistic.dispatch.dto.PalletQrResponseDto;
 import com.logistic.dispatch.dto.PalletSummaryResponseDto;
 import com.logistic.dispatch.entitiy.Batch;
 import com.logistic.dispatch.entitiy.Pallet;
 import com.logistic.dispatch.entitiy.Product;
-import com.logistic.dispatch.exception.AlreadyClosed;
-import com.logistic.dispatch.exception.JsonProcessingCustomException;
-import com.logistic.dispatch.exception.PalletAssignmentException;
-import com.logistic.dispatch.exception.UserNotFoundException;
+import com.logistic.dispatch.exception.*;
 import com.logistic.dispatch.repository.PalletRepository;
 import com.logistic.dispatch.repository.ProductRepository;
 import com.logistic.dispatch.service.PalletService;
@@ -229,6 +227,23 @@ public class PalletServiceImpl implements PalletService {
                         pallet.getClosedAt()));
     }
 
+
+    @Override
+    public PalletBatchesResponseDto getBatchesInPallet(String palletSerialNumber) {
+
+        Pallet pallet = palletRepository.findByPalletSerialNumber(palletSerialNumber)
+                .orElseThrow(() -> new ProductNotFoundException("Pallet not found"));
+
+        Product product = productRepository.findById(pallet.getProductId())
+                .orElseThrow(() -> new ProductNotFoundException("Product not found"));
+
+        return new PalletBatchesResponseDto(
+                pallet.getPalletSerialNumber(),
+                product.getProductCode(),
+                pallet.getCurrentBatches(),
+                pallet.getBatchSerialList()
+        );
+    }
     private List<String> getBatchList(String json) {
         try {
             if (json != null && !json.isBlank()) {

@@ -54,4 +54,9 @@ public class BatchController {
                                                                             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(batchService.getBatchesByStatus(status, page, size));
     }
+
+    @GetMapping("/{batchSerialNumber}/products")
+    public ResponseEntity<BatchProductsResponseDto> getProductsInBatch(@PathVariable String batchSerialNumber) {
+        return ResponseEntity.ok(batchService.getProductsInBatch(batchSerialNumber));
+    }
 }

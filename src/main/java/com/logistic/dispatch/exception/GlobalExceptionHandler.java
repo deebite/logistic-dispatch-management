@@ -142,4 +142,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleValidationException(RequestValidationException ex) {
         return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
     }
+
+    @ExceptionHandler(GrtValidationException.class)
+    public ResponseEntity<ErrorResponse> handleGrtValidation(GrtValidationException ex) {
+        return ResponseEntity.badRequest().body(new ErrorResponse(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(), ex.getMessage()));
+    }
 }

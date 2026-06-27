@@ -23,4 +23,5 @@ public class ProductResponseDto {
     private Integer monthlyTarget;
     private String photoUrl;
     private String status;
+    private Boolean grtCheckRequired;
 }

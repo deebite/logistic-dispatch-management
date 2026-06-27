@@ -62,4 +62,7 @@ public class Product extends BaseEntity{
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
     private ProductStatus status;
+
+    @Column(name = "grt_check_required", nullable = false)
+    private Boolean isGrtCheckRequired ;
 }

@@ -48,4 +48,7 @@ public class ProductRequestDto {
 
     @NotBlank(message = "Revision is required", groups = OnCreate.class)
     private String revisionCode;
+
+    @NotNull(message = "Is GRT status is required?", groups = OnCreate.class)
+    private Boolean grtCheckRequired;
 }

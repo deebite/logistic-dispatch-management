@@ -121,6 +121,14 @@ public class ProductServiceImpl implements ProductService {
             product.setSapCode(dto.getSapCode());
         }
 
+        if (dto.getRevisionCode() != null) {
+            product.setRevisionCode(dto.getRevisionCode());
+        }
+
+        if (dto.getStatus() != null) {
+            product.setStatus(dto.getStatus());
+        }
+
         Product updatedProduct = productRepository.save(product);
         LOG.info("Updated product {}", updatedProduct);
         return ProductMapper.toResponse(updatedProduct);

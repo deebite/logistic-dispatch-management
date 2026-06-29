@@ -8,8 +8,10 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.logistic.dispatch.entitiy.Batch;
 import com.logistic.dispatch.entitiy.Pallet;
+import com.logistic.dispatch.entitiy.Product;
 import com.logistic.dispatch.exception.QrGenerationException;
 import com.logistic.dispatch.repository.BatchRepository;
+import com.logistic.dispatch.repository.ProductRepository;
 import org.hibernate.annotations.CurrentTimestamp;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -33,10 +35,12 @@ public class QrService {
 
     private final ObjectMapper objectMapper;
     private final BatchRepository batchRepository;
+    private final ProductRepository productRepository;
 
-    public QrService(ObjectMapper objectMapper, BatchRepository batchRepository) {
+    public QrService(ObjectMapper objectMapper, BatchRepository batchRepository, ProductRepository productRepository) {
         this.objectMapper = objectMapper;
         this.batchRepository = batchRepository;
+        this.productRepository = productRepository;
     }
 
     public String getQrImageBase64(String qrPath) {
@@ -52,11 +56,13 @@ public class QrService {
     public void generateQrForBatch(Batch batch, List<String> serialList) {
 
         try {
+            Product product = productRepository.findById(batch.getProductId())
+                    .orElseThrow(() -> new RuntimeException("Product not found: " + batch.getProductId()));
 
             Map<String, Object> qrData = new HashMap<>();
             qrData.put("batchId", batch.getBatchId());
             qrData.put("batchSerial", batch.getBatchSerialNumber());
-            qrData.put("productCode", batch.getProductId());
+            qrData.put("productCode", product.getProductCode());
             qrData.put("totalUnits", batch.getCurrentUnits());
             qrData.put("serialNumbers", serialList);
             qrData.put("generatedAt", LocalDateTime.now().toString());
@@ -94,7 +100,8 @@ public class QrService {
     public void generatePalletQr(Pallet pallet, List<String> batchSerialNumbers) {
 
         try {
-
+            Product product = productRepository.findByProductId(pallet.getProductId())
+                    .orElseThrow(() -> new RuntimeException("Product not found: " + pallet.getProductId()));
             List<Map<String, Object>> batchDetails = new ArrayList<>();
 
             for (String batchSerial : batchSerialNumbers) {
@@ -114,7 +121,7 @@ public class QrService {
 
             Map<String, Object> qrData = new HashMap<>();
             qrData.put("palletNumber", pallet.getPalletSerialNumber());
-            qrData.put("productId", pallet.getProductId());
+            qrData.put("productId", product.getProductCode());
             qrData.put("batchCount", pallet.getCurrentBatches());
             qrData.put("batches", batchDetails);
             qrData.put("generatedAt", LocalDateTime.now().toString());

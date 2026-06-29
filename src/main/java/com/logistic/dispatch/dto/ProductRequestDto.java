@@ -1,5 +1,6 @@
 package com.logistic.dispatch.dto;
 
+import com.logistic.dispatch.utility.ProductStatus;
 import com.logistic.dispatch.validation.OnCreate;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -48,4 +49,7 @@ public class ProductRequestDto {
 
     @NotBlank(message = "Revision is required", groups = OnCreate.class)
     private String revisionCode;
+
+    @NotBlank(message = "Status is required", groups = OnCreate.class)
+    private ProductStatus status;
 }

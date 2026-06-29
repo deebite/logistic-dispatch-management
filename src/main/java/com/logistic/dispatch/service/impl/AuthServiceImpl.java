@@ -42,7 +42,7 @@ public class AuthServiceImpl implements AuthService {
                     )
             );
         } catch (BadCredentialsException e) {
-            LOG.error("Authentication failed for user: {}", request.getUsername(), e);
+            LOG.error("Authentication failed for user: {} and exception: {}", request.getUsername(), e.getMessage());
             throw new InvalidCredentialsException("Invalid username or password");
         }
 

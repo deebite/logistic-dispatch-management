@@ -3,6 +3,7 @@ package com.logistic.dispatch.exception;
 import com.logistic.dispatch.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -141,5 +142,26 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RequestValidationException.class)
     public ResponseEntity<Map<String, String>> handleValidationException(RequestValidationException ex) {
         return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(LocalDateTime.now(), HttpStatus.CONFLICT.value(),
+                "Batch has already been assigned to another user."));
+    }
+
+    @ExceptionHandler(BatchException.class)
+    public ResponseEntity<ErrorResponse> handleBatchException(BatchException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidBatchStateException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidBatchState(InvalidBatchStateException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(UnauthorizedBatchAccessException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorizedBatchAccess(UnauthorizedBatchAccessException ex){
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(LocalDateTime.now(), HttpStatus.UNAUTHORIZED.value(), ex.getMessage()));
     }
 }

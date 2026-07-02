@@ -4,6 +4,8 @@ import com.logistic.dispatch.dto.*;
 import com.logistic.dispatch.utility.LifeCycleStatus;
 import org.springframework.data.domain.Page;
 
+import java.util.List;
+
 public interface BatchService {
 
     ScanResponseDto scanProduct(ScanProductDto dto);
@@ -19,4 +21,10 @@ public interface BatchService {
     Page<BatchSummaryResponseDto> getBatchesByStatus(LifeCycleStatus status, int page, int size);
 
     BatchProductsResponseDto getProductsInBatch(String batchSerialNumber);
+
+    List<BatchSummaryDto> getActiveBatches(String productCode);
+
+    BatchSummaryDto assignBatch(String batchSerialNumber);
+
+    BatchSummaryDto releaseBatch(String batchSerialNumber);
 }

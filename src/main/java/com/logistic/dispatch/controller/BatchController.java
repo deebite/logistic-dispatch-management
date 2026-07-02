@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/batch")
 @PreAuthorize("hasRole('ADMIN') or hasRole('OPERATOR')")
@@ -58,5 +60,20 @@ public class BatchController {
     @GetMapping("/{batchSerialNumber}/products")
     public ResponseEntity<BatchProductsResponseDto> getProductsInBatch(@PathVariable String batchSerialNumber) {
         return ResponseEntity.ok(batchService.getProductsInBatch(batchSerialNumber));
+    }
+
+    @GetMapping("/active/{productCode}")
+    public ResponseEntity<List<BatchSummaryDto>> getActiveBatches(@PathVariable String productCode) {
+        return ResponseEntity.ok(batchService.getActiveBatches(productCode));
+    }
+
+    @PostMapping("/{batchSerialNumber}/assign")
+    public ResponseEntity<BatchSummaryDto> assignBatch(@PathVariable String batchSerialNumber) {
+        return ResponseEntity.ok(batchService.assignBatch(batchSerialNumber));
+    }
+
+    @PostMapping("/{batchSerialNumber}/release")
+    public ResponseEntity<BatchSummaryDto> releaseBatch(@PathVariable String batchSerialNumber) {
+        return ResponseEntity.ok(batchService.releaseBatch(batchSerialNumber));
     }
 }

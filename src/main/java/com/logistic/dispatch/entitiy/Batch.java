@@ -59,6 +59,14 @@ public class Batch extends BaseEntity {
 
     private LocalDateTime closedAt;
 
+    @Column(name = "assigned_user_id")
+    private UUID assignedUserId;
+
+    @Column(name = "assigned_user_name")
+    private String assignedUserName;
+
+    private LocalDateTime assignedAt;
+
     @CreatedBy
     @Column(name = "created_by", updatable = false)
     private String createdBy;

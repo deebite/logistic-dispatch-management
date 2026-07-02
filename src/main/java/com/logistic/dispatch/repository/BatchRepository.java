@@ -42,4 +42,11 @@ public interface BatchRepository extends JpaRepository<Batch, UUID> {
     List<Batch> findClosedBatchesByDate(UUID productId, LocalDateTime start, LocalDateTime end);
 
     Page<Batch> findByStatus(LifeCycleStatus status, Pageable pageable);
+
+    Optional<Batch> findByProductIdAndAssignedUserIdAndStatus(UUID productId, UUID assignedUserId, LifeCycleStatus status);
+
+    Optional<Batch> findFirstByProductIdAndAssignedUserIdIsNullAndStatus(UUID productId, LifeCycleStatus status);
+
+    List<Batch> findByProductIdAndStatusInOrderByCreatedAtAsc(UUID productId, List<LifeCycleStatus> statuses);
+
 }

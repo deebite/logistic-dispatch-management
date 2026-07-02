@@ -6,15 +6,14 @@ import com.logistic.dispatch.dto.*;
 import com.logistic.dispatch.entitiy.Batch;
 import com.logistic.dispatch.entitiy.Pallet;
 import com.logistic.dispatch.entitiy.Product;
+import com.logistic.dispatch.entitiy.UserInfo;
 import com.logistic.dispatch.exception.*;
 import com.logistic.dispatch.repository.BatchRepository;
 import com.logistic.dispatch.repository.ProductRepository;
+import com.logistic.dispatch.repository.UserInfoRepository;
 import com.logistic.dispatch.service.BatchService;
 import com.logistic.dispatch.service.PalletService;
-import com.logistic.dispatch.utility.LifeCycleStatus;
-import com.logistic.dispatch.utility.ProductStatus;
-import com.logistic.dispatch.utility.QrService;
-import com.logistic.dispatch.utility.QrStatus;
+import com.logistic.dispatch.utility.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -28,10 +27,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,14 +36,16 @@ public class BatchServiceImpl implements BatchService {
 
     private final BatchRepository batchRepository;
     private final ProductRepository productRepository;
+    private final UserInfoRepository userInfoRepository;
     private final QrService qrService;
     private final ObjectMapper objectMapper;
     private final PalletService palletService;
     private static final Logger LOG = LoggerFactory.getLogger(BatchServiceImpl.class);
 
-    public BatchServiceImpl(BatchRepository batchRepository, ProductRepository productRepository, QrService qrService, ObjectMapper objectMapper, PalletService palletService) {
+    public BatchServiceImpl(BatchRepository batchRepository, ProductRepository productRepository, UserInfoRepository userInfoRepository, QrService qrService, ObjectMapper objectMapper, PalletService palletService) {
         this.batchRepository = batchRepository;
         this.productRepository = productRepository;
+        this.userInfoRepository = userInfoRepository;
         this.qrService = qrService;
         this.objectMapper = objectMapper;
         this.palletService = palletService;
@@ -58,7 +56,7 @@ public class BatchServiceImpl implements BatchService {
     public ScanResponseDto scanProduct(ScanProductDto dto) {
         LOG.info("Scan Product is: {}", dto);
         Product product = validateProduct(dto.getProductCode());
-        Batch batch = getOrCreateOpenBatch(product);
+        Batch batch = getOrCreateBatchForUser(product);
 
         List<String> serialList = batch.getProductSerialList();
         Set<String> existingSet = buildNormalizedSet(serialList);
@@ -103,7 +101,7 @@ public class BatchServiceImpl implements BatchService {
     public BulkScanResponseDto bulkScan(BulkScanRequestDto dto) {
         LOG.info("Bulk Scan is: {}", dto);
         Product product = validateProduct(dto.getProductCode());
-        Batch batch = getOrCreateOpenBatch(product);
+        Batch batch = getOrCreateBatchForUser(product);
 
         List<String> serialList = batch.getProductSerialList();
         Set<String> existingSet = buildNormalizedSet(serialList);
@@ -132,7 +130,8 @@ public class BatchServiceImpl implements BatchService {
         int remaining = batch.getMaxUnits() - batch.getCurrentUnits();
 
         // ADD THIS BLOCK HERE
-        String batchQrImage = null;;
+        String batchQrImage = null;
+        ;
         String palletQrImage = null;
         String palletSerialNumber = null;
 
@@ -226,8 +225,37 @@ public class BatchServiceImpl implements BatchService {
         return product;
     }
 
-    private Batch getOrCreateOpenBatch(Product product) {
-        return batchRepository.findByProductIdAndStatus(product.getProductId(), LifeCycleStatus.OPEN).orElseGet(() -> createNewBatch(product));
+    private Batch getOrCreateBatchForUser(Product product) {
+
+        String username = SecurityUtils.getCurrentUsername();
+
+        UserInfo user = userInfoRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        // Step 1 : Check if the current user already has an active batch
+        Optional<Batch> assignedBatch = batchRepository.findByProductIdAndAssignedUserIdAndStatus(product.getProductId(), user.getUserId(), LifeCycleStatus.IN_PROGRESS);
+
+        if (assignedBatch.isPresent()) {
+            return assignedBatch.get();
+        }
+
+        // Step 2 : Check for an AVAILABLE batch
+        Optional<Batch> availableBatch = batchRepository.findFirstByProductIdAndAssignedUserIdIsNullAndStatus(product.getProductId(), LifeCycleStatus.AVAILABLE);
+
+        if (availableBatch.isPresent()) {
+
+            Batch batch = availableBatch.get();
+
+            batch.setAssignedUserId(user.getUserId());
+            batch.setAssignedUserName(user.getUsername());
+            batch.setAssignedAt(LocalDateTime.now());
+            batch.setStatus(LifeCycleStatus.IN_PROGRESS);
+
+            return batchRepository.save(batch);
+        }
+
+        // Step 3 : Create a new batch
+        return createAndAssignBatch(product, user);
     }
 
     private Set<String> buildNormalizedSet(List<String> serialList) {
@@ -254,7 +282,7 @@ public class BatchServiceImpl implements BatchService {
         }
     }
 
-    private Batch createNewBatch(Product product) {
+    private Batch createAndAssignBatch(Product product, UserInfo user) {
         LOG.info("Creating new batch for product: {} with details: {}", product.getProductCode(), product);
         LocalDate today = LocalDate.now();
         String formattedDate = today.format(DateTimeFormatter.BASIC_ISO_DATE);
@@ -273,10 +301,20 @@ public class BatchServiceImpl implements BatchService {
         batch.setProductId(product.getProductId());
         batch.setMaxUnits(product.getBoxCapacity());
         batch.setCurrentUnits(0);
-        batch.setStatus(LifeCycleStatus.OPEN);
         batch.setProductSerialList(new ArrayList<>());
-        LOG.info("New batch created: {}", batch);
+
+        assignBatchToUser(batch, user);
+
+        LOG.info("New batch created and assigned to user {} : {}", user.getUsername(), batch);
         return batchRepository.save(batch);
+    }
+
+    private void assignBatchToUser(Batch batch, UserInfo user) {
+
+        batch.setAssignedUserId(user.getUserId());
+        batch.setAssignedUserName(user.getUsername());
+        batch.setAssignedAt(LocalDateTime.now());
+        batch.setStatus(LifeCycleStatus.IN_PROGRESS);
     }
 
     // =====================================================
@@ -317,7 +355,7 @@ public class BatchServiceImpl implements BatchService {
     }
 
     @Override
-    public BatchQrResponseDto  reprintBatchQr(String batchSerialNumber) {
+    public BatchQrResponseDto reprintBatchQr(String batchSerialNumber) {
         LOG.info("Reprinting QR for batch: {}", batchSerialNumber);
         Batch batch = batchRepository.findByBatchSerialNumber(batchSerialNumber).orElseThrow(() -> new UserNotFoundException("Batch not found!"));
 
@@ -332,18 +370,18 @@ public class BatchServiceImpl implements BatchService {
 
     @Override
     public Page<BatchSummaryResponseDto> getBatchesByStatus(LifeCycleStatus status, int page, int size) {
-        LOG.info("Getting batches by status: {} and page {}, size {}", status,  page, size);
+        LOG.info("Getting batches by status: {} and page {}, size {}", status, page, size);
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
         Page<Batch> batchPage = batchRepository.findByStatus(status, pageable);
         LOG.info("Found {} batches with status: {}", batchPage.getTotalElements(), status);
         return batchPage.map(batch -> new BatchSummaryResponseDto(
-                        batch.getBatchSerialNumber(),
-                        batch.getCurrentUnits(),
-                        batch.getMaxUnits(),
-                        batch.getStatus(),
-                        batch.getCreatedAt(),
-                        batch.getClosedAt()));
+                batch.getBatchSerialNumber(),
+                batch.getCurrentUnits(),
+                batch.getMaxUnits(),
+                batch.getStatus(),
+                batch.getCreatedAt(),
+                batch.getClosedAt()));
     }
 
     @Override
@@ -361,5 +399,121 @@ public class BatchServiceImpl implements BatchService {
                 batch.getCurrentUnits(),
                 batch.getProductSerialList()
         );
+    }
+
+    @Override
+    public List<BatchSummaryDto> getActiveBatches(String productCode) {
+
+        Product product = validateProduct(productCode);
+
+        String username = SecurityUtils.getCurrentUsername();
+
+        List<Batch> batches = batchRepository.findByProductIdAndStatusInOrderByCreatedAtAsc(
+                        product.getProductId(), List.of(LifeCycleStatus.IN_PROGRESS, LifeCycleStatus.AVAILABLE));
+
+        return batches.stream().map(batch -> mapToBatchSummary(
+                        batch,
+                        product.getProductCode(),
+                        username))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public BatchSummaryDto assignBatch(String batchSerialNumber) {
+
+        String username = SecurityUtils.getCurrentUsername();
+
+        UserInfo user = userInfoRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        Batch batch = batchRepository.findByBatchSerialNumber(batchSerialNumber)
+                .orElseThrow(() -> new BatchException("Batch not found"));
+
+        // Validate batch status
+        if (batch.getStatus() != LifeCycleStatus.AVAILABLE) {
+            throw new BatchException("Batch is no longer available.");
+        }
+
+        // Check if user already has an active batch for this product
+        Optional<Batch> existingBatch = batchRepository.findByProductIdAndAssignedUserIdAndStatus(
+                batch.getProductId(),
+                user.getUserId(),
+                LifeCycleStatus.IN_PROGRESS);
+
+        if (existingBatch.isPresent()) {
+            throw new BatchException("You already have an active batch for this product.");
+        }
+
+        assignBatchToUser(batch, user);
+
+        Batch savedBatch = batchRepository.save(batch);
+
+        return mapToBatchSummary(
+                savedBatch,
+                getProduct(savedBatch.getProductId()).getProductCode(),
+                username);
+    }
+
+    @Override
+    @Transactional
+    public BatchSummaryDto releaseBatch(String batchSerialNumber) {
+
+        String username = SecurityUtils.getCurrentUsername();
+
+        UserInfo user = userInfoRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        Batch batch = batchRepository.findByBatchSerialNumber(batchSerialNumber)
+                .orElseThrow(() -> new ProductNotFoundException("Batch not found"));
+
+        if (!user.getUserId().equals(batch.getAssignedUserId())) {
+            throw new UnauthorizedBatchAccessException("You are not allowed to release this batch.");
+        }
+
+        if (batch.getStatus() != LifeCycleStatus.IN_PROGRESS) {
+            throw new InvalidBatchStateException("Only an IN_PROGRESS batch can be released.");
+        }
+
+        batch.setAssignedUserId(null);
+        batch.setAssignedUserName(null);
+        batch.setAssignedAt(null);
+        batch.setStatus(LifeCycleStatus.AVAILABLE);
+
+        Batch savedBatch = batchRepository.save(batch);
+
+        return mapToBatchSummary(
+                savedBatch,
+                getProduct(savedBatch.getProductId()).getProductCode(),
+                username);
+    }
+
+    private BatchSummaryDto mapToBatchSummary(Batch batch, String productCode, String loggedInUser) {
+
+        BatchAction action;
+
+        if (loggedInUser.equals(batch.getAssignedUserName())) {
+            action = BatchAction.RESUME;
+        } else if (batch.getStatus() == LifeCycleStatus.AVAILABLE) {
+            action = BatchAction.CONTINUE;
+        } else {
+            action = BatchAction.IN_USE;
+        }
+
+        return BatchSummaryDto.builder()
+                .productCode(productCode)
+                .batchSerialNumber(batch.getBatchSerialNumber())
+                .currentUnits(batch.getCurrentUnits())
+                .maxUnits(batch.getMaxUnits())
+                .status(batch.getStatus().name())
+                .assignedUser(batch.getAssignedUserName())
+                .assignedAt(batch.getAssignedAt())
+                .action(action)
+                .build();
+    }
+
+    private Product getProduct(UUID productId) {
+        return productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found"));
     }
 }

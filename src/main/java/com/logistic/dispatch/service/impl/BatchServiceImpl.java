@@ -410,7 +410,7 @@ public class BatchServiceImpl implements BatchService {
 
         List<Batch> batches = batchRepository.findByProductIdAndStatusInOrderByCreatedAtAsc(
                         product.getProductId(), List.of(LifeCycleStatus.IN_PROGRESS, LifeCycleStatus.AVAILABLE));
-
+        LOG.info("Found {} batches with status: {}", batches.size(), product.getProductCode());
         return batches.stream().map(batch -> mapToBatchSummary(
                         batch,
                         product.getProductCode(),
@@ -421,7 +421,7 @@ public class BatchServiceImpl implements BatchService {
     @Override
     @Transactional
     public BatchSummaryDto assignBatch(String batchSerialNumber) {
-
+        LOG.info("Assigning batch: {}", batchSerialNumber);
         String username = SecurityUtils.getCurrentUsername();
 
         UserInfo user = userInfoRepository.findByUsername(username)
@@ -442,7 +442,8 @@ public class BatchServiceImpl implements BatchService {
                 LifeCycleStatus.IN_PROGRESS);
 
         if (existingBatch.isPresent()) {
-            throw new BatchException("You already have an active batch for this product.");
+            LOG.error("User {} already has an active batch for product {}: {}", username, batch.getProductId(), existingBatch.get().getBatchSerialNumber());
+            throw new BatchException("You already have an active batch for this product."+existingBatch.get().getBatchSerialNumber());
         }
 
         assignBatchToUser(batch, user);
@@ -458,7 +459,7 @@ public class BatchServiceImpl implements BatchService {
     @Override
     @Transactional
     public BatchSummaryDto releaseBatch(String batchSerialNumber) {
-
+        LOG.info("Releasing batch: {}", batchSerialNumber);
         String username = SecurityUtils.getCurrentUsername();
 
         UserInfo user = userInfoRepository.findByUsername(username)
@@ -468,10 +469,12 @@ public class BatchServiceImpl implements BatchService {
                 .orElseThrow(() -> new ProductNotFoundException("Batch not found"));
 
         if (!user.getUserId().equals(batch.getAssignedUserId())) {
+            LOG.error("User {} is trying to release batch {} assigned to user {}", username, batchSerialNumber, batch.getAssignedUserName());
             throw new UnauthorizedBatchAccessException("You are not allowed to release this batch.");
         }
 
         if (batch.getStatus() != LifeCycleStatus.IN_PROGRESS) {
+            LOG.error("User {} is trying to release batch {}", username, batchSerialNumber);
             throw new InvalidBatchStateException("Only an IN_PROGRESS batch can be released.");
         }
 
@@ -481,7 +484,7 @@ public class BatchServiceImpl implements BatchService {
         batch.setStatus(LifeCycleStatus.AVAILABLE);
 
         Batch savedBatch = batchRepository.save(batch);
-
+        LOG.info("Batch released: {}", savedBatch.getBatchSerialNumber());
         return mapToBatchSummary(
                 savedBatch,
                 getProduct(savedBatch.getProductId()).getProductCode(),
@@ -489,7 +492,7 @@ public class BatchServiceImpl implements BatchService {
     }
 
     private BatchSummaryDto mapToBatchSummary(Batch batch, String productCode, String loggedInUser) {
-
+        LOG.info("Mapping batch {} to product {}", batch.getBatchSerialNumber(), productCode);
         BatchAction action;
 
         if (loggedInUser.equals(batch.getAssignedUserName())) {

@@ -5,6 +5,7 @@ import com.logistic.dispatch.utility.LifeCycleStatus;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface BatchService {
 
@@ -27,4 +28,6 @@ public interface BatchService {
     BatchSummaryDto assignBatch(String batchSerialNumber);
 
     BatchSummaryDto releaseBatch(String batchSerialNumber);
+
+    Integer releaseAllActiveBatches(UUID userId);
 }

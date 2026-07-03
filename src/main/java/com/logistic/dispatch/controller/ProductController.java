@@ -41,6 +41,7 @@ public class ProductController {
     }
 
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERVISOR')")
     public ResponseEntity<ProductResponseDto> createProduct(@RequestPart("product") String productDetails, @RequestPart MultipartFile productImage) throws Exception {
         ProductRequestDto productRequestDto = objectMapper.readValue(productDetails, ProductRequestDto.class);
         Set<ConstraintViolation<ProductRequestDto>> violations = validator.validate(productRequestDto, OnCreate.class);
@@ -72,20 +73,20 @@ public class ProductController {
     }
 
     @PutMapping("/update/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERVISOR')")
     public ResponseEntity<ProductResponseDto> updateProduct(@PathVariable UUID id, @Validated(OnUpdate.class) @RequestBody ProductRequestDto dto) {
         return ResponseEntity.ok(productService.updateProduct(id, dto));
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERVISOR')")
     public ResponseEntity<ProductResponseDto> changeStatus(@PathVariable UUID id, @RequestParam String status) {
         ProductStatus productStatus = ProductStatus.valueOf(status.toUpperCase());
         return ResponseEntity.ok(productService.changeProductStatus(id, productStatus));
     }
 
     @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERVISOR')")
     public ResponseEntity<String> deleteProduct(@PathVariable UUID id) {
         productService.deleteProduct(id);
         return ResponseEntity.ok("Product deleted successfully");

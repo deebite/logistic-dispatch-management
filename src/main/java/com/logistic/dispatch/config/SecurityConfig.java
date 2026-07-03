@@ -36,12 +36,55 @@ public class SecurityConfig {
                 })
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                                .requestMatchers("/api/auth/login").permitAll()
-                                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                                .requestMatchers("/api/employee/**").hasAnyRole("ADMIN", "SUPERVISOR")
-//                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                                .anyRequest().authenticated()
+
+                        // Authentication
+                        .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/logout").authenticated()
+
+                        // Swagger
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+
+                        // OPTIONS
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // Employee Management
+                        .requestMatchers("/api/employee/**")
+                        .hasAnyRole("ADMIN", "SUPERVISOR")
+
+                        // ---------------- Products ----------------
+                        // Create
+                        .requestMatchers(HttpMethod.POST, "/api/products/create")
+                        .hasAnyRole("ADMIN", "SUPERVISOR")
+
+                        // Read
+                        .requestMatchers(HttpMethod.GET, "/api/products/**")
+                        .hasAnyRole("ADMIN", "SUPERVISOR", "OPERATOR")
+
+                        // Update
+                        .requestMatchers(HttpMethod.PUT, "/api/products/update/**")
+                        .hasAnyRole("ADMIN", "SUPERVISOR")
+
+                        // Change Status
+                        .requestMatchers(HttpMethod.PATCH, "/api/products/*/status")
+                        .hasAnyRole("ADMIN", "SUPERVISOR")
+
+                        // Update Image
+                        .requestMatchers(HttpMethod.PATCH, "/api/products/*/image")
+                        .hasAnyRole("ADMIN", "SUPERVISOR")
+
+                        // Delete
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/delete/**")
+                        .hasAnyRole("ADMIN", "SUPERVISOR")
+
+                        // ---------------- Batch ----------------
+                        .requestMatchers("/api/batch/**")
+                        .hasAnyRole("ADMIN", "SUPERVISOR", "OPERATOR")
+
+                        // ---------------- Pallet ----------------
+                        .requestMatchers("/api/pallet/**")
+                        .hasAnyRole("ADMIN", "SUPERVISOR", "OPERATOR")
+
+                        .anyRequest().denyAll()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 

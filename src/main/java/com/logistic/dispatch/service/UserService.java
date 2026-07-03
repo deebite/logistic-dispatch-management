@@ -1,6 +1,7 @@
 package com.logistic.dispatch.service;
 
 import com.logistic.dispatch.dto.CreateUserRequestDto;
+import com.logistic.dispatch.dto.LogoutResponseDto;
 import com.logistic.dispatch.dto.UserResponseDto;
 import com.logistic.dispatch.utility.ProfileStatus;
 
@@ -24,4 +25,6 @@ public interface UserService {
     void deleteUser(UUID id);
 
     UserResponseDto getUserByUsername(String username);
+
+    LogoutResponseDto logout();
 }

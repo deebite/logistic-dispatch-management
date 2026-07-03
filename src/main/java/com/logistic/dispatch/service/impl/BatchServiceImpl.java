@@ -497,17 +497,23 @@ public class BatchServiceImpl implements BatchService {
             throw new InvalidBatchStateException("Only an IN_PROGRESS batch can be released.");
         }
 
-        batch.setAssignedUserId(null);
-        batch.setAssignedUserName(null);
-        batch.setAssignedAt(null);
-        batch.setStatus(LifeCycleStatus.AVAILABLE);
-
-        Batch savedBatch = batchRepository.save(batch);
+        Batch savedBatch = releaseBatchInternal(batch);
         LOG.info("Batch released: {}", savedBatch.getBatchSerialNumber());
         return mapToBatchSummary(
                 savedBatch,
                 getProduct(savedBatch.getProductId()).getProductCode(),
                 user.getUsername());
+    }
+
+    @Override
+    @Transactional
+    public Integer releaseAllActiveBatches(UUID userId) {
+
+        List<Batch> activeBatches = batchRepository.findByAssignedUserIdAndStatus(userId, LifeCycleStatus.IN_PROGRESS);
+        activeBatches.forEach(this::releaseBatchInternal);
+
+        LOG.info("Released {} active batches for user {}", activeBatches.size(), userId);
+        return activeBatches.size();
     }
 
     private BatchSummaryDto mapToBatchSummary(Batch batch, String productCode, String loggedInUser) {
@@ -545,5 +551,15 @@ public class BatchServiceImpl implements BatchService {
         return userInfoRepository.findByUsername(username)
                 .orElseThrow(() ->
                         new UserNotFoundException("User not found."));
+    }
+
+    private Batch releaseBatchInternal(Batch batch) {
+
+        batch.setAssignedUserId(null);
+        batch.setAssignedUserName(null);
+        batch.setAssignedAt(null);
+        batch.setStatus(LifeCycleStatus.AVAILABLE);
+
+        return batchRepository.save(batch);
     }
 }

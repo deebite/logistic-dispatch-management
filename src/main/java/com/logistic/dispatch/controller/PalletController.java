@@ -17,7 +17,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/pallet")
-@PreAuthorize("hasRole('ADMIN') or hasRole('SUPERVISOR') or hasRole('OPERATOR')")
 public class PalletController {
 
     private final PalletService palletService;

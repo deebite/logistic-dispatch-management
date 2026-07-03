@@ -13,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/batch")
-@PreAuthorize("hasRole('ADMIN') or hasRole('OPERATOR')")
 public class BatchController {
 
     private final BatchService batchService;

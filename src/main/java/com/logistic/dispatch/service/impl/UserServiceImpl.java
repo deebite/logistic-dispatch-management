@@ -1,15 +1,21 @@
 package com.logistic.dispatch.service.impl;
 
 import com.logistic.dispatch.dto.CreateUserRequestDto;
+import com.logistic.dispatch.dto.LogoutResponseDto;
 import com.logistic.dispatch.dto.UserResponseDto;
+import com.logistic.dispatch.entitiy.Batch;
 import com.logistic.dispatch.entitiy.UserInfo;
 import com.logistic.dispatch.exception.SelfDeactivationNotAllowedException;
 import com.logistic.dispatch.exception.UserNotFoundException;
 import com.logistic.dispatch.exception.UsernameAlreadyExistsException;
 import com.logistic.dispatch.mapper.UserMapper;
+import com.logistic.dispatch.repository.BatchRepository;
 import com.logistic.dispatch.repository.UserInfoRepository;
+import com.logistic.dispatch.service.BatchService;
 import com.logistic.dispatch.service.UserService;
+import com.logistic.dispatch.utility.LifeCycleStatus;
 import com.logistic.dispatch.utility.ProfileStatus;
+import com.logistic.dispatch.utility.SecurityUtils;
 import com.logistic.dispatch.utility.UserRole;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
@@ -29,10 +35,12 @@ public class UserServiceImpl implements UserService {
 
     private static final Logger LOG = LoggerFactory.getLogger(UserServiceImpl.class);
     private final UserInfoRepository userRepository;
+    private final BatchService batchService;
     private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserInfoRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserInfoRepository userRepository, BatchService batchService, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.batchService = batchService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -161,5 +169,24 @@ public class UserServiceImpl implements UserService {
     public UserResponseDto getUserByUsername(String username) {
         UserInfo user = userRepository.findByUsername(username).orElseThrow(() -> new UserNotFoundException("User not found"));
         return UserMapper.toResponse(user);
+    }
+
+    @Override
+    @Transactional
+    public LogoutResponseDto logout() {
+
+        String username = SecurityUtils.getCurrentUsername();
+
+        UserInfo user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found."));
+
+        Integer releasedBatchCount = batchService.releaseAllActiveBatches(user.getUserId());
+
+        LOG.info("User {} logged out successfully. Released {} active batches.", username, releasedBatchCount);
+
+        return LogoutResponseDto.builder()
+                .message("Logout successful.")
+                .releasedBatchCount(releasedBatchCount)
+                .build();
     }
 }

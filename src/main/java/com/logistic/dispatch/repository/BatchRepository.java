@@ -49,4 +49,5 @@ public interface BatchRepository extends JpaRepository<Batch, UUID> {
 
     List<Batch> findByProductIdAndStatusInOrderByCreatedAtAsc(UUID productId, List<LifeCycleStatus> statuses);
 
+    List<Batch> findByAssignedUserIdAndStatus(UUID assignedUserId, LifeCycleStatus status);
 }

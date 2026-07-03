@@ -1,6 +1,7 @@
 package com.logistic.dispatch.controller;
 
 import com.logistic.dispatch.dto.CreateUserRequestDto;
+import com.logistic.dispatch.dto.LogoutResponseDto;
 import com.logistic.dispatch.dto.UpdateUserStatusDto;
 import com.logistic.dispatch.dto.UserResponseDto;
 import com.logistic.dispatch.service.UserService;
@@ -66,5 +67,10 @@ public class UserController {
     public ResponseEntity<String> deleteUser(@PathVariable UUID id) {
         userService.deleteUser(id);
         return ResponseEntity.ok("User deleted successfully");
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<LogoutResponseDto> logout() {
+        return ResponseEntity.ok(userService.logout());
     }
 }

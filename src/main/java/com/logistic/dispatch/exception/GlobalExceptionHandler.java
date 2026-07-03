@@ -164,4 +164,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUnauthorizedBatchAccess(UnauthorizedBatchAccessException ex){
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(LocalDateTime.now(), HttpStatus.UNAUTHORIZED.value(), ex.getMessage()));
     }
+
+    @ExceptionHandler(GrtValidationException.class)
+    public ResponseEntity<ErrorResponse> handleGrtValidation(GrtValidationException ex) {
+        return ResponseEntity.badRequest().body(new ErrorResponse(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(), ex.getMessage()));
+    }
 }

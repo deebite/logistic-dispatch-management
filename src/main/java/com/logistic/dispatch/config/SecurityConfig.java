@@ -39,6 +39,7 @@ public class SecurityConfig {
 
                         // Authentication
                         .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/grt-report/create").permitAll()
                         .requestMatchers("/api/auth/logout").authenticated()
 
                         // Swagger

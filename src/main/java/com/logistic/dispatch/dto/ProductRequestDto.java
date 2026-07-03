@@ -52,4 +52,7 @@ public class ProductRequestDto {
 
     @NotBlank(message = "Status is required", groups = OnCreate.class)
     private ProductStatus status;
+
+    @NotNull(message = "Is GRT status is required?", groups = OnCreate.class)
+    private Boolean grtCheckRequired;
 }

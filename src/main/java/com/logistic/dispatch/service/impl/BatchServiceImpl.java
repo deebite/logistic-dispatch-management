@@ -3,12 +3,10 @@ package com.logistic.dispatch.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logistic.dispatch.dto.*;
-import com.logistic.dispatch.entitiy.Batch;
-import com.logistic.dispatch.entitiy.Pallet;
-import com.logistic.dispatch.entitiy.Product;
-import com.logistic.dispatch.entitiy.UserInfo;
+import com.logistic.dispatch.entitiy.*;
 import com.logistic.dispatch.exception.*;
 import com.logistic.dispatch.repository.BatchRepository;
+import com.logistic.dispatch.repository.GrtReportRepository;
 import com.logistic.dispatch.repository.ProductRepository;
 import com.logistic.dispatch.repository.UserInfoRepository;
 import com.logistic.dispatch.service.BatchService;
@@ -37,15 +35,17 @@ public class BatchServiceImpl implements BatchService {
     private final BatchRepository batchRepository;
     private final ProductRepository productRepository;
     private final UserInfoRepository userInfoRepository;
+    private final GrtReportRepository grtReportRepository;
     private final QrService qrService;
     private final ObjectMapper objectMapper;
     private final PalletService palletService;
     private static final Logger LOG = LoggerFactory.getLogger(BatchServiceImpl.class);
 
-    public BatchServiceImpl(BatchRepository batchRepository, ProductRepository productRepository, UserInfoRepository userInfoRepository, QrService qrService, ObjectMapper objectMapper, PalletService palletService) {
+    public BatchServiceImpl(BatchRepository batchRepository, ProductRepository productRepository, UserInfoRepository userInfoRepository, GrtReportRepository grtReportRepository, QrService qrService, ObjectMapper objectMapper, PalletService palletService) {
         this.batchRepository = batchRepository;
         this.productRepository = productRepository;
         this.userInfoRepository = userInfoRepository;
+        this.grtReportRepository = grtReportRepository;
         this.qrService = qrService;
         this.objectMapper = objectMapper;
         this.palletService = palletService;
@@ -56,6 +56,7 @@ public class BatchServiceImpl implements BatchService {
     public ScanResponseDto scanProduct(ScanProductDto dto) {
         LOG.info("Scan Product is: {}", dto);
         Product product = validateProduct(dto.getProductCode());
+        validateGrtReport(product, dto.getProductSerialNumber());
         Batch batch = getOrCreateBatchForUser(product);
 
         List<String> serialList = batch.getProductSerialList();
@@ -111,7 +112,7 @@ public class BatchServiceImpl implements BatchService {
         int processedCount = 0;
 
         for (String serial : dto.getSerialNumbers()) {
-
+            validateGrtReport(product, serial);
             String normalized = serial.trim().toUpperCase();
 
             if (!requestUniqueSet.add(normalized)) {
@@ -339,6 +340,20 @@ public class BatchServiceImpl implements BatchService {
         batch.setAssignedUserName(user.getUsername());
         batch.setAssignedAt(LocalDateTime.now());
         batch.setStatus(LifeCycleStatus.IN_PROGRESS);
+    }
+
+    private void validateGrtReport(Product product, String serialNumber) {
+
+        if (!Boolean.TRUE.equals(product.getIsGrtCheckRequired())) {
+            return;
+        }
+
+        GrtReportDetail report = grtReportRepository.findBySerialNo(serialNumber)
+                .orElseThrow(() -> new GrtValidationException("GRT report not found for serial number: " + serialNumber));
+
+        if (!"OK".equalsIgnoreCase(report.getStatus())) {
+            throw new GrtValidationException("Product cannot be scanned because GRT status is NG.");
+        }
     }
 
     // =====================================================

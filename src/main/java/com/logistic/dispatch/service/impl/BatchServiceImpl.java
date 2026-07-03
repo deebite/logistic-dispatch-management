@@ -148,27 +148,51 @@ public class BatchServiceImpl implements BatchService {
     }
 
     @Override
-    public ManualBatchCloseResponse closeBatchManually(String batchSerialNumber) {
-        LOG.info("Manually closing batch: {}", batchSerialNumber);
-        Batch batch = batchRepository.findByBatchSerialNumber(batchSerialNumber)
-                .orElseThrow(() -> new UserNotFoundException("Batch not found!"));
+    @Transactional
+    public ManualBatchCloseResponse closeBatch(String batchSerialNumber) {
 
+        LOG.info("Manual batch close requested for batch : {}", batchSerialNumber);
+
+        UserInfo user = getLoggedInUser();
+        Batch batch = batchRepository.findByBatchSerialNumber(batchSerialNumber)
+                .orElseThrow(() -> new ProductNotFoundException("Batch not found."));
+
+        // Already Closed
         if (batch.getStatus() == LifeCycleStatus.CLOSED) {
-            throw new AlreadyClosed("Batch already closed!");
+            throw new AlreadyClosed("Batch is already closed.");
         }
 
+        //In progress
+        if (batch.getStatus() == LifeCycleStatus.IN_PROGRESS) {
+            // Only owner can close
+            if (!user.getUserId().equals(batch.getAssignedUserId())) {
+                throw new BatchException("Only the assigned operator can close this batch.");
+            }
+        }
+
+        // AVAILABLE
+        else if (batch.getStatus() == LifeCycleStatus.AVAILABLE) {
+            // Only Supervisor/Admin
+            if (user.getRole() != UserRole.SUPERVISOR && user.getRole() != UserRole.ADMIN) {
+                throw new BatchException("Only Supervisor or Admin can close an available batch.");
+            }
+            batch.setAssignedUserId(user.getUserId());
+            batch.setAssignedUserName(user.getUsername());
+            batch.setAssignedAt(LocalDateTime.now());
+        }
         batch.setStatus(LifeCycleStatus.CLOSED);
         batch.setClosedAt(LocalDateTime.now());
         batch.setQrStatus(QrStatus.PENDING);
 
-        qrService.generateQrForBatch(batch, batch.getProductSerialList());
+        Batch savedBatch = batchRepository.save(batch);
+        // Generate QR
+        qrService.generateQrForBatch(savedBatch, savedBatch.getProductSerialList());
+        String qrImage = qrService.getQrImageBase64(savedBatch.getQrCodePath());
 
-        batchRepository.save(batch);
+        LOG.info("Batch {} closed successfully by {}", savedBatch.getBatchSerialNumber(), user.getUsername());
 
-        String qrImage = qrService.getQrImageBase64(batch.getQrCodePath());
-        LOG.info("Batch closed successfully. QrImage Path: {}", qrImage);
-        return new ManualBatchCloseResponse("Batch closed successfully",
-                batch.getBatchSerialNumber(), qrImage);
+        return new ManualBatchCloseResponse("Batch closed successfully.",
+                savedBatch.getBatchSerialNumber(), qrImage);
     }
 
     private SerialProcessResult processSingleSerial(Batch batch, String rawSerial, List<String> serialList, Set<String> existingSet) {
@@ -409,7 +433,7 @@ public class BatchServiceImpl implements BatchService {
         String username = SecurityUtils.getCurrentUsername();
 
         List<Batch> batches = batchRepository.findByProductIdAndStatusInOrderByCreatedAtAsc(
-                        product.getProductId(), List.of(LifeCycleStatus.IN_PROGRESS, LifeCycleStatus.AVAILABLE));
+                product.getProductId(), List.of(LifeCycleStatus.IN_PROGRESS, LifeCycleStatus.AVAILABLE));
         LOG.info("Found {} batches with status: {}", batches.size(), product.getProductCode());
         return batches.stream().map(batch -> mapToBatchSummary(
                         batch,
@@ -422,10 +446,7 @@ public class BatchServiceImpl implements BatchService {
     @Transactional
     public BatchSummaryDto assignBatch(String batchSerialNumber) {
         LOG.info("Assigning batch: {}", batchSerialNumber);
-        String username = SecurityUtils.getCurrentUsername();
-
-        UserInfo user = userInfoRepository.findByUsername(username)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        UserInfo user = getLoggedInUser();
 
         Batch batch = batchRepository.findByBatchSerialNumber(batchSerialNumber)
                 .orElseThrow(() -> new BatchException("Batch not found"));
@@ -442,8 +463,8 @@ public class BatchServiceImpl implements BatchService {
                 LifeCycleStatus.IN_PROGRESS);
 
         if (existingBatch.isPresent()) {
-            LOG.error("User {} already has an active batch for product {}: {}", username, batch.getProductId(), existingBatch.get().getBatchSerialNumber());
-            throw new BatchException("You already have an active batch for this product."+existingBatch.get().getBatchSerialNumber());
+            LOG.error("User {} already has an active batch for product {}: {}", user.getUsername(), batch.getProductId(), existingBatch.get().getBatchSerialNumber());
+            throw new BatchException("You already have an active batch for this product." + existingBatch.get().getBatchSerialNumber());
         }
 
         assignBatchToUser(batch, user);
@@ -453,28 +474,26 @@ public class BatchServiceImpl implements BatchService {
         return mapToBatchSummary(
                 savedBatch,
                 getProduct(savedBatch.getProductId()).getProductCode(),
-                username);
+                user.getUsername());
     }
 
     @Override
     @Transactional
     public BatchSummaryDto releaseBatch(String batchSerialNumber) {
         LOG.info("Releasing batch: {}", batchSerialNumber);
-        String username = SecurityUtils.getCurrentUsername();
 
-        UserInfo user = userInfoRepository.findByUsername(username)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        UserInfo user = getLoggedInUser();
 
         Batch batch = batchRepository.findByBatchSerialNumber(batchSerialNumber)
                 .orElseThrow(() -> new ProductNotFoundException("Batch not found"));
 
         if (!user.getUserId().equals(batch.getAssignedUserId())) {
-            LOG.error("User {} is trying to release batch {} assigned to user {}", username, batchSerialNumber, batch.getAssignedUserName());
+            LOG.error("User {} is trying to release batch {} assigned to user {}", user.getUsername(), batchSerialNumber, batch.getAssignedUserName());
             throw new UnauthorizedBatchAccessException("You are not allowed to release this batch.");
         }
 
         if (batch.getStatus() != LifeCycleStatus.IN_PROGRESS) {
-            LOG.error("User {} is trying to release batch {}", username, batchSerialNumber);
+            LOG.error("User {} is trying to release batch {}", user.getUsername(), batchSerialNumber);
             throw new InvalidBatchStateException("Only an IN_PROGRESS batch can be released.");
         }
 
@@ -488,7 +507,7 @@ public class BatchServiceImpl implements BatchService {
         return mapToBatchSummary(
                 savedBatch,
                 getProduct(savedBatch.getProductId()).getProductCode(),
-                username);
+                user.getUsername());
     }
 
     private BatchSummaryDto mapToBatchSummary(Batch batch, String productCode, String loggedInUser) {
@@ -518,5 +537,13 @@ public class BatchServiceImpl implements BatchService {
     private Product getProduct(UUID productId) {
         return productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found"));
+    }
+
+    private UserInfo getLoggedInUser() {
+        String username = SecurityUtils.getCurrentUsername();
+
+        return userInfoRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new UserNotFoundException("User not found."));
     }
 }

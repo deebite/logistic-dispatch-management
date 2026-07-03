@@ -12,7 +12,10 @@ import com.logistic.dispatch.entitiy.Product;
 import com.logistic.dispatch.exception.QrGenerationException;
 import com.logistic.dispatch.repository.BatchRepository;
 import com.logistic.dispatch.repository.ProductRepository;
+import com.logistic.dispatch.service.impl.BatchServiceImpl;
 import org.hibernate.annotations.CurrentTimestamp;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -29,6 +32,8 @@ import java.util.List;
 
 @Component
 public class QrService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(BatchServiceImpl.class);
 
     @Value("${qr-images.store.path}")
     private String qrCodePath;
@@ -54,6 +59,7 @@ public class QrService {
     }
 
     public void generateQrForBatch(Batch batch, List<String> serialList) {
+        LOG.info("Generating QR for batch: {} with details : {}", batch.getBatchSerialNumber(), batch.toString());
 
         try {
             Product product = productRepository.findById(batch.getProductId())
@@ -63,9 +69,10 @@ public class QrService {
             qrData.put("batchId", batch.getBatchId());
             qrData.put("batchSerial", batch.getBatchSerialNumber());
             qrData.put("productCode", product.getProductCode());
+            qrData.put("packedBy", batch.getUpdatedBy());
+            qrData.put("closedAt", batch.getClosedAt() != null ? batch.getClosedAt().toString() : null);
             qrData.put("totalUnits", batch.getCurrentUnits());
             qrData.put("serialNumbers", serialList);
-            qrData.put("generatedAt", LocalDateTime.now().toString());
 
             String qrContent = objectMapper.writeValueAsString(qrData);
 

@@ -42,7 +42,7 @@ public class BatchController {
 
     @PostMapping("/{batchSerialNumber}/close")
     public ResponseEntity<ManualBatchCloseResponse> closeBatch(@PathVariable String batchSerialNumber) {
-        return ResponseEntity.ok(batchService.closeBatchManually(batchSerialNumber));
+        return ResponseEntity.ok(batchService.closeBatch(batchSerialNumber));
     }
 
     @GetMapping("/{batchSerialNumber}/reprint-qr")

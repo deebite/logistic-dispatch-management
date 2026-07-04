@@ -57,13 +57,13 @@ public class BatchServiceImpl implements BatchService {
         LOG.info("Scan Product is: {}", dto);
         Product product = validateProduct(dto.getProductCode());
         validateGrtReport(product, dto.getProductSerialNumber());
+        LOG.info("GRT Validation complete for product: {}", dto.getProductSerialNumber());
         Batch batch = getOrCreateBatchForUser(product);
 
         List<String> serialList = batch.getProductSerialList();
         Set<String> existingSet = buildNormalizedSet(serialList);
 
-        SerialProcessResult result =
-                processSingleSerial(batch, dto.getProductSerialNumber(), serialList, existingSet);
+        SerialProcessResult result = processSingleSerial(batch, dto.getProductSerialNumber(), serialList, existingSet);
 
         if (!result.isSuccess()) {
             LOG.error("Failed to process serial: {}", result.getMessage());
@@ -75,16 +75,26 @@ public class BatchServiceImpl implements BatchService {
         String batchQrImage = null;
         String palletQrImage = null;
         String palletSerialNumber = null;
+        String palletStatus = null;
+        String currentBatches = null;
+        String maxBatches = null;
 
         if (batch.getStatus() == LifeCycleStatus.CLOSED) {
             batchQrImage = qrService.getQrImageBase64(batch.getQrCodePath());
         }
 
-        if (pallet != null && pallet.getStatus() == LifeCycleStatus.CLOSED) {
-            palletQrImage = qrService.getQrImageBase64(pallet.getQrCodePath());
+        if (pallet != null) {
             palletSerialNumber = pallet.getPalletSerialNumber();
+            palletStatus = pallet.getStatus() != null ? pallet.getStatus().name() : null;
+            currentBatches = pallet.getCurrentBatches() != null ? pallet.getCurrentBatches().toString() : null;
+            maxBatches = pallet.getMaxBatches() != null ? pallet.getMaxBatches().toString() : null;
+
+            if (pallet.getStatus() == LifeCycleStatus.CLOSED) {
+                palletQrImage = qrService.getQrImageBase64(pallet.getQrCodePath());
+            }
         }
 
+        assert pallet != null;
         return new ScanResponseDto(
                 batch.getStatus() == LifeCycleStatus.CLOSED ? "Product scanned successfully. Batch closed."
                         : "Product scanned successfully.",
@@ -95,7 +105,11 @@ public class BatchServiceImpl implements BatchService {
                 batch.getMaxUnits(),
                 batch.getStatus().name(),
                 remaining,
-                batchQrImage, palletSerialNumber, palletQrImage);
+                batchQrImage, palletSerialNumber,
+                palletStatus,
+                currentBatches,
+                maxBatches,
+                palletQrImage);
     }
 
     @Override
@@ -287,26 +301,6 @@ public class BatchServiceImpl implements BatchService {
         return serialList.stream().map(s -> s.trim().toUpperCase()).collect(Collectors.toSet());
     }
 
-    private String convertListToJson(List<String> serials) {
-        try {
-            return objectMapper.writeValueAsString(serials);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize serial list", e);
-        }
-    }
-
-    private List<String> getSerialListFromJson(String json) {
-        try {
-            if (json != null && !json.isBlank()) {
-                return objectMapper.readValue(json, new TypeReference<List<String>>() {
-                });
-            }
-            return new ArrayList<>();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to parse serial list", e);
-        }
-    }
-
     private Batch createAndAssignBatch(Product product, UserInfo user) {
         LOG.info("Creating new batch for product: {} with details: {}", product.getProductCode(), product);
         LocalDate today = LocalDate.now();
@@ -349,9 +343,13 @@ public class BatchServiceImpl implements BatchService {
         }
 
         GrtReportDetail report = grtReportRepository.findBySerialNo(serialNumber)
-                .orElseThrow(() -> new GrtValidationException("GRT report not found for serial number: " + serialNumber));
+                .orElseThrow(() -> {
+                    LOG.error("Grt report not found for serial number: {}", serialNumber);
+                    return new GrtValidationException("GRT report not found for serial number: " + serialNumber);
+                });
 
         if (!"OK".equalsIgnoreCase(report.getStatus())) {
+            LOG.error("GRT report status {} for serial number {}", report.getStatus(), serialNumber);
             throw new GrtValidationException("Product cannot be scanned because GRT status is NG.");
         }
     }

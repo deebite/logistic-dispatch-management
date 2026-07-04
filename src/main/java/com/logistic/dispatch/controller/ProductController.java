@@ -6,12 +6,15 @@ import com.logistic.dispatch.dto.ProductRequestDto;
 import com.logistic.dispatch.dto.ProductResponseDto;
 import com.logistic.dispatch.exception.RequestValidationException;
 import com.logistic.dispatch.service.ProductService;
+import com.logistic.dispatch.service.impl.AuthServiceImpl;
 import com.logistic.dispatch.utility.ProductStatus;
 import com.logistic.dispatch.validation.OnCreate;
 import com.logistic.dispatch.validation.OnUpdate;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ValidationException;
 import jakarta.validation.Validator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,6 +37,8 @@ public class ProductController {
 
     private final Validator validator;
 
+    private static final Logger LOG = LoggerFactory.getLogger(ProductController.class);
+
     public ProductController(ProductService productService, ObjectMapper objectMapper, Validator validator) {
         this.productService = productService;
         this.objectMapper = objectMapper;
@@ -44,6 +49,7 @@ public class ProductController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERVISOR')")
     public ResponseEntity<ProductResponseDto> createProduct(@RequestPart("product") String productDetails, @RequestPart MultipartFile productImage) throws Exception {
         ProductRequestDto productRequestDto = objectMapper.readValue(productDetails, ProductRequestDto.class);
+        LOG.info("Received request to create product with details: {} and image: {}", productDetails, productImage.getOriginalFilename());
         Set<ConstraintViolation<ProductRequestDto>> violations = validator.validate(productRequestDto, OnCreate.class);
 
         if (!violations.isEmpty()) {

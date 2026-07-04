@@ -230,7 +230,7 @@ public class PalletServiceImpl implements PalletService {
 
     @Override
     public PalletBatchesResponseDto getBatchesInPallet(String palletSerialNumber) {
-
+        LOG.info("Getting batches in pallet: {}", palletSerialNumber);
         Pallet pallet = palletRepository.findByPalletSerialNumber(palletSerialNumber)
                 .orElseThrow(() -> new ProductNotFoundException("Pallet not found"));
 
@@ -244,24 +244,5 @@ public class PalletServiceImpl implements PalletService {
                 pallet.getMaxBatches(),
                 pallet.getBatchSerialList()
         );
-    }
-    private List<String> getBatchList(String json) {
-        try {
-            if (json != null && !json.isBlank()) {
-                return objectMapper.readValue(json, new TypeReference<List<String>>() {
-                });
-            }
-            return new ArrayList<>();
-        } catch (Exception e) {
-            throw new JsonProcessingCustomException("Failed to parse pallet batch list", e);
-        }
-    }
-
-    private String convertToJson(List<String> list) {
-        try {
-            return objectMapper.writeValueAsString(list);
-        } catch (Exception e) {
-            throw new JsonProcessingCustomException("Failed to serialize pallet batch list", e);
-        }
     }
 }

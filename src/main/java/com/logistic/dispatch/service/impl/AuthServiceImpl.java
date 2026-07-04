@@ -64,7 +64,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public LogoutResponseDto logout(LogoutRequestDto request) {
-
+        LOG.info("Logging out user: {}", SecurityUtils.getCurrentUsername());
         String username = SecurityUtils.getCurrentUsername();
 
         UserInfo user = userRepo.findByUsername(username)

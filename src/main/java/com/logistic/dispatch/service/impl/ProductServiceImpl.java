@@ -129,6 +129,14 @@ public class ProductServiceImpl implements ProductService {
             product.setStatus(dto.getStatus());
         }
 
+        if (dto.getGrtCheckRequired()  != null) {
+            product.setIsGrtCheckRequired(dto.getGrtCheckRequired());
+        }
+
+        if (dto.getColourCode() != null) {
+            product.setColourCode(dto.getColourCode());
+        }
+
         Product updatedProduct = productRepository.save(product);
         LOG.info("Updated product {}", updatedProduct);
         return ProductMapper.toResponse(updatedProduct);

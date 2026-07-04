@@ -14,14 +14,12 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/report")
-@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class ReportController {
 
     private final ReportService reportService;
 
     @GetMapping("/product-summary")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
     public ResponseEntity<ProductSummaryDto> getProductSummary(@RequestParam String productCode, @RequestParam(required = false) String from, @RequestParam(required = false) String to) {
 
         DateFormatter dates = getDateFormatter(from, to);

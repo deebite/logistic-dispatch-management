@@ -85,6 +85,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/pallet/**")
                         .hasAnyRole("ADMIN", "SUPERVISOR", "OPERATOR")
 
+                        .requestMatchers("/api/report/**")
+                        .hasAnyRole("ADMIN", "SUPERVISOR")
+
                         .anyRequest().denyAll()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

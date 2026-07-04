@@ -29,5 +29,11 @@ public class ScanResponseDto {
 
     private String palletSerialNumber;
 
+    private String palletStatus;
+
+    private String palletCurrentUnits;
+
+    private String palletMaxUnits;
+
     private String palletQrImage;
 }

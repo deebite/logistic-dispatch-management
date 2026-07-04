@@ -68,9 +68,4 @@ public class UserController {
         userService.deleteUser(id);
         return ResponseEntity.ok("User deleted successfully");
     }
-
-    @PostMapping("/logout")
-    public ResponseEntity<LogoutResponseDto> logout() {
-        return ResponseEntity.ok(userService.logout());
-    }
 }

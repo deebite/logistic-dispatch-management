@@ -171,22 +171,4 @@ public class UserServiceImpl implements UserService {
         return UserMapper.toResponse(user);
     }
 
-    @Override
-    @Transactional
-    public LogoutResponseDto logout() {
-
-        String username = SecurityUtils.getCurrentUsername();
-
-        UserInfo user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UserNotFoundException("User not found."));
-
-        Integer releasedBatchCount = batchService.releaseAllActiveBatches(user.getUserId());
-
-        LOG.info("User {} logged out successfully. Released {} active batches.", username, releasedBatchCount);
-
-        return LogoutResponseDto.builder()
-                .message("Logout successful.")
-                .releasedBatchCount(releasedBatchCount)
-                .build();
-    }
 }

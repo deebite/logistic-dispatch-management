@@ -26,5 +26,4 @@ public interface UserService {
 
     UserResponseDto getUserByUsername(String username);
 
-    LogoutResponseDto logout();
 }

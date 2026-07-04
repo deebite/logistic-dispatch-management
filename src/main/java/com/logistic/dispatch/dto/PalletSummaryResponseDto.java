@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -19,6 +20,12 @@ public class PalletSummaryResponseDto {
     private Integer maxBatches;
 
     private LifeCycleStatus status;
+
+    private String productCode;
+
+    private String productName;
+
+    private List<String> batchSerialLists;
 
     private LocalDateTime createdAt;
 

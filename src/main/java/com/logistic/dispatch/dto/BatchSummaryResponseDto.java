@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -19,6 +20,12 @@ public class BatchSummaryResponseDto {
     private Integer maxUnits;
 
     private LifeCycleStatus status;
+
+    private String productCode;
+
+    private String productName;
+
+    private List<String> productSerialNumbers;
 
     private LocalDateTime createdAt;
 

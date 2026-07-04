@@ -1,6 +1,5 @@
 package com.logistic.dispatch.service.impl;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logistic.dispatch.dto.*;
 import com.logistic.dispatch.entitiy.*;
@@ -412,13 +411,23 @@ public class BatchServiceImpl implements BatchService {
 
         Page<Batch> batchPage = batchRepository.findByStatus(status, pageable);
         LOG.info("Found {} batches with status: {}", batchPage.getTotalElements(), status);
-        return batchPage.map(batch -> new BatchSummaryResponseDto(
-                batch.getBatchSerialNumber(),
-                batch.getCurrentUnits(),
-                batch.getMaxUnits(),
-                batch.getStatus(),
-                batch.getCreatedAt(),
-                batch.getClosedAt()));
+        return batchPage.map(batch -> {
+
+            Product product = productRepository.findById(batch.getProductId())
+                    .orElse(null);
+
+            return new BatchSummaryResponseDto(
+                    batch.getBatchSerialNumber(),
+                    batch.getCurrentUnits(),
+                    batch.getMaxUnits(),
+                    batch.getStatus(),
+                    product != null ? product.getProductCode() : null,
+                    product != null ? product.getName() : null,
+                    batch.getProductSerialList(),
+                    batch.getCreatedAt(),
+                    batch.getClosedAt()
+            );
+        });
     }
 
     @Override

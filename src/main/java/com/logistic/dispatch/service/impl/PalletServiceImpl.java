@@ -1,6 +1,5 @@
 package com.logistic.dispatch.service.impl;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.logistic.dispatch.dto.ManualPalletCloseResponse;
 import com.logistic.dispatch.dto.PalletBatchesResponseDto;
@@ -9,7 +8,10 @@ import com.logistic.dispatch.dto.PalletSummaryResponseDto;
 import com.logistic.dispatch.entitiy.Batch;
 import com.logistic.dispatch.entitiy.Pallet;
 import com.logistic.dispatch.entitiy.Product;
-import com.logistic.dispatch.exception.*;
+import com.logistic.dispatch.exception.AlreadyClosed;
+import com.logistic.dispatch.exception.PalletAssignmentException;
+import com.logistic.dispatch.exception.ProductNotFoundException;
+import com.logistic.dispatch.exception.UserNotFoundException;
 import com.logistic.dispatch.repository.PalletRepository;
 import com.logistic.dispatch.repository.ProductRepository;
 import com.logistic.dispatch.service.PalletService;
@@ -199,7 +201,7 @@ public class PalletServiceImpl implements PalletService {
     public PalletQrResponseDto reprintPalletQr(String palletSerialNumber) {
         LOG.info("Reprinting QR for pallet: {}", palletSerialNumber);
         Pallet pallet = palletRepository.findByPalletSerialNumber(palletSerialNumber)
-                        .orElseThrow(() -> new UserNotFoundException("Pallet not found!"));
+                .orElseThrow(() -> new UserNotFoundException("Pallet not found!"));
 
         if (pallet.getStatus() != LifeCycleStatus.CLOSED) {
             LOG.error("QR can only be reprinted for CLOSED pallet: {}", palletSerialNumber);
@@ -218,13 +220,23 @@ public class PalletServiceImpl implements PalletService {
 
         Page<Pallet> palletPage = palletRepository.findByStatus(status, pageable);
         LOG.info("Found {} pallets with status: {}", palletPage.getTotalElements(), status);
-        return palletPage.map(pallet -> new PalletSummaryResponseDto(
-                        pallet.getPalletSerialNumber(),
-                        pallet.getCurrentBatches(),
-                        pallet.getMaxBatches(),
-                        pallet.getStatus(),
-                        pallet.getCreatedAt(),
-                        pallet.getClosedAt()));
+        return palletPage.map(pallet -> {
+
+            Product product = productRepository.findById(pallet.getProductId())
+                    .orElse(null);
+
+            return new PalletSummaryResponseDto(
+                    pallet.getPalletSerialNumber(),
+                    pallet.getCurrentBatches(),
+                    pallet.getMaxBatches(),
+                    pallet.getStatus(),
+                    product != null ? product.getProductCode() : null,
+                    product != null ? product.getName() : null,
+                    pallet.getBatchSerialList(),
+                    pallet.getCreatedAt(),
+                    pallet.getClosedAt()
+            );
+        });
     }
 
 

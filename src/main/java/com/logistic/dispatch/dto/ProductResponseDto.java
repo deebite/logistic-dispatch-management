@@ -24,4 +24,5 @@ public class ProductResponseDto {
     private String photoUrl;
     private String status;
     private Boolean grtCheckRequired;
+    private String colourCode;
 }

@@ -73,6 +73,7 @@ public class QrService {
             qrData.put("closedAt", batch.getClosedAt() != null ? batch.getClosedAt().toString() : null);
             qrData.put("totalUnits", batch.getCurrentUnits());
             qrData.put("serialNumbers", serialList);
+            qrData.put("colourCode", product.getColourCode());
 
             String qrContent = objectMapper.writeValueAsString(qrData);
 

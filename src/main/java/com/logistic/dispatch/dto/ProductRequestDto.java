@@ -50,9 +50,12 @@ public class ProductRequestDto {
     @NotBlank(message = "Revision is required", groups = OnCreate.class)
     private String revisionCode;
 
-    @NotBlank(message = "Status is required", groups = OnCreate.class)
+    @NotNull(message = "Status is required", groups = OnCreate.class)
     private ProductStatus status;
 
     @NotNull(message = "Is GRT status is required?", groups = OnCreate.class)
     private Boolean grtCheckRequired;
+
+    @NotBlank(message = "Colour code is required", groups = OnCreate.class)
+    private String colourCode;
 }

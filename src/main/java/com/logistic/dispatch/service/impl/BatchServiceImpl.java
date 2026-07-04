@@ -436,6 +436,7 @@ public class BatchServiceImpl implements BatchService {
                 batch.getBatchSerialNumber(),
                 product.getProductCode(),
                 batch.getCurrentUnits(),
+                batch.getMaxUnits(),
                 batch.getProductSerialList()
         );
     }

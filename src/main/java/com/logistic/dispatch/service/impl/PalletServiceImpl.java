@@ -241,6 +241,7 @@ public class PalletServiceImpl implements PalletService {
                 pallet.getPalletSerialNumber(),
                 product.getProductCode(),
                 pallet.getCurrentBatches(),
+                pallet.getMaxBatches(),
                 pallet.getBatchSerialList()
         );
     }

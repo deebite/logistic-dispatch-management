@@ -17,5 +17,7 @@ public class PalletBatchesResponseDto {
 
     private Integer currentBatches;
 
+    private Integer maxBatches;
+
     private List<String> batchSerialNumbers;
 }

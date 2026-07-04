@@ -65,4 +65,7 @@ public class Product extends BaseEntity{
 
     @Column(name = "grt_check_required", nullable = false)
     private Boolean isGrtCheckRequired ;
+
+    @Column(name = "colour_code")
+    private String colourCode;
 }

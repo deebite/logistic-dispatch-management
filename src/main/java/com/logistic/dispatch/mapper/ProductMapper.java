@@ -25,6 +25,7 @@ public class ProductMapper {
         product.setRevisionCode(dto.getRevisionCode());
         product.setStatus(ProductStatus.ACTIVE);
         product.setIsGrtCheckRequired(dto.getGrtCheckRequired());
+        product.setColourCode(dto.getColourCode());
 
         return product;
     }
@@ -47,7 +48,8 @@ public class ProductMapper {
                 product.getMonthlyTarget(),
                 product.getPhotoUrl(),
                 product.getStatus().name(),
-                product.getIsGrtCheckRequired()
+                product.getIsGrtCheckRequired(),
+                product.getColourCode()
         );
     }
 }

@@ -14,5 +14,6 @@ public class BatchProductsResponseDto {
     private String batchSerialNumber;
     private String productCode;
     private Integer currentUnits;
+    private Integer maxUnits;
     private List<String> productSerialNumbers;
 }

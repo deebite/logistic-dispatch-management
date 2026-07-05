@@ -9,14 +9,11 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProductSummaryDto {
+public class ProductSummary {
 
     private String productCode;
 
-    private Long totalClosedBatches;
-    private Long totalClosedPallets;
-    private Long totalSerialsProduced;
+    private String productName;
 
-    private Long openBatches;
-    private Long openPallets;
+    private String manufacturerCode;
 }

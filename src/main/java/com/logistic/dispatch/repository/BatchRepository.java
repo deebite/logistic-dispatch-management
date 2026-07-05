@@ -19,7 +19,7 @@ public interface BatchRepository extends JpaRepository<Batch, UUID> {
 
     Optional<Batch> findByBatchSerialNumber(String batchSerialNumber);
 
-    Optional<Batch> findByProductIdAndStatus(Long productId, LifeCycleStatus status);
+    List<Batch> findByProductId(UUID productId);
 
     List<Batch> findByStatus(LifeCycleStatus status);
 
@@ -50,4 +50,10 @@ public interface BatchRepository extends JpaRepository<Batch, UUID> {
     List<Batch> findByProductIdAndStatusInOrderByCreatedAtAsc(UUID productId, List<LifeCycleStatus> statuses);
 
     List<Batch> findByAssignedUserIdAndStatus(UUID assignedUserId, LifeCycleStatus status);
+
+
+    @Query("SELECT COUNT(b) FROM Batch b WHERE b.productId = :productId AND b.status IN ('AVAILABLE','IN_PROGRESS') AND b.createdAt BETWEEN :start AND :end")
+    Long countInProgressBatches(UUID productId, LocalDateTime start, LocalDateTime end);
+
+    List<Batch> findByProductIdAndCreatedAtBetween(UUID productId, LocalDateTime start, LocalDateTime end);
 }

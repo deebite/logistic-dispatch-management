@@ -16,7 +16,7 @@ import java.util.UUID;
 @Repository
 public interface PalletRepository extends JpaRepository<Pallet, UUID> {
 
-    Optional<Pallet> findByPalletId(UUID palletId);
+    List<Pallet> findByProductId(UUID productId);
 
     List<Pallet> findByProductIdAndStatus(UUID productId, LifeCycleStatus status);
 
@@ -32,4 +32,9 @@ public interface PalletRepository extends JpaRepository<Pallet, UUID> {
     Optional<Pallet> findByPalletSerialNumber(String palletSerialNumber);
 
     Page<Pallet> findByStatus(LifeCycleStatus status, Pageable pageable);
+
+    @Query("SELECT COUNT(p) FROM Pallet p WHERE p.productId = :productId AND p.status = 'OPEN' AND p.createdAt BETWEEN :start AND :end")
+    Long countOpenPalletsByDate(UUID productId, LocalDateTime start, LocalDateTime end);
+
+    List<Pallet> findByProductIdAndCreatedAtBetween(UUID productId, LocalDateTime start, LocalDateTime end);
 }

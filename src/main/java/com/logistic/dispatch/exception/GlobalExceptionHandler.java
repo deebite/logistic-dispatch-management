@@ -1,6 +1,7 @@
 package com.logistic.dispatch.exception;
 
 import com.logistic.dispatch.dto.ErrorResponse;
+import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -168,5 +169,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(GrtValidationException.class)
     public ResponseEntity<ErrorResponse> handleGrtValidation(GrtValidationException ex) {
         return ResponseEntity.badRequest().body(new ErrorResponse(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequest(BadRequestException ex) {
+        ErrorResponse error = new ErrorResponse(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 }

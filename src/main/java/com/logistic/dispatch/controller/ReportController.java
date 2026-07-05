@@ -1,10 +1,13 @@
 package com.logistic.dispatch.controller;
 
 import com.logistic.dispatch.dto.BatchReportDto;
+import com.logistic.dispatch.dto.DispatchSummaryResponseDto;
 import com.logistic.dispatch.dto.ProductSummaryDto;
 import com.logistic.dispatch.service.ReportService;
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.BadRequestException;
 import org.jspecify.annotations.NonNull;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -62,5 +65,36 @@ public class ReportController {
     }
 
     private record DateFormatter(LocalDate fromDate, LocalDate toDate) {
+    }
+
+    @GetMapping("/{productCode}/dispatch-summary")
+    public ResponseEntity<DispatchSummaryResponseDto> getDispatchSummary(@PathVariable String productCode, @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate, @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) throws BadRequestException {
+
+        // No dates -> Today
+        if (startDate == null && endDate == null) {
+            startDate = LocalDate.now();
+            endDate = LocalDate.now();
+        }
+        // Start date provided, end date missing -> Today
+        else if (startDate != null && endDate == null) {
+            endDate = LocalDate.now();
+        }
+        // End date provided, start date missing -> Same day
+        else if (startDate == null) {
+            startDate = endDate;
+        }
+
+        if (startDate.isAfter(endDate)) {
+            throw new BadRequestException("Start date cannot be after end date.");
+        }
+
+        return ResponseEntity.ok(
+                reportService.getDispatchSummary(
+                        productCode,
+                        startDate,
+                        endDate
+                )
+        );
     }
 }
